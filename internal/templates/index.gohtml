@@ -1,0 +1,58 @@
+<html lang="en">
+<head>
+    {{- /*gotype: github.com/joschahenningsen/meldung/internal.config*/ -}}
+    <title>{{.Content.Title}}</title>
+    <link rel="stylesheet" href="/static/css/skeleton.css">
+    <link rel="stylesheet" href="/static/css/normalize.css">
+</head>
+
+<body>
+<div class="container">
+    <div style="display: flex; flex-direction: row; justify-content: space-between;">
+        <h1 style="flex-grow: 1; margin: auto;">{{.Content.Title}}</h1>
+        <span style="padding: 2rem;">{{.GetLogo}}</span>
+    </div>
+    <p>
+        {{.Content.Summary}}
+    </p>
+    <hr>
+    <form method="post" action="/submit">
+        {{range .Content.Fields}}
+            <div style="margin-bottom: 3rem">
+                <label class="row">
+                    <span class="12 columns" style="margin-left: 0">{{.Name}}</span>
+                    {{if eq .Type "textarea"}}
+                        <textarea class="12 columns" style="margin-left: 0" {{if .Required}} required{{end}}
+                                  name="{{.Name}}"></textarea>
+
+                    {{else if eq .Type "select"}}
+                        <select class="12 columns" style="margin-left: 0" {{if .Required}} required{{end}}
+                                name="{{.Name}}">
+                            {{range .Choices}}
+                                <option>{{.}}</option>
+                            {{end}}
+                        </select>
+                    {{else if eq .Type "checkbox"}}
+                        <input style="margin-left: 0"
+                               type="{{.Type}}"{{if .Required}} required{{end}}
+                               name="{{.Name}}">
+                    {{else if eq .Type "file"}}
+                        <input class="12 columns" style="margin-left: 0" multiple
+                               type="{{.Type}}"{{if .Required}} required{{end}}
+                               name="{{.Name}}">
+                    {{else}}
+                        <input class="12 columns" style="margin-left: 0"
+                               type="{{.Type}}"{{if .Required}} required{{end}}
+                               name="{{.Name}}">
+                    {{end}}
+                </label>
+                <p>
+                    {{.Description}}
+                </p>
+            </div>
+        {{end}}
+        <input type="submit" value="Absenden">
+    </form>
+</div>
+</body>
+</html>

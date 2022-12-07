@@ -1,0 +1,60 @@
+# http listen port:
+port: 8080
+
+# uncomment for https:
+#https:
+#  port: 8443
+#  cert: /path/to/cert.pem
+#  key: /path/to/key.pem
+
+content:
+  title: Meldeplattform
+  summary: Here you can post anonymous reports about security issues you found in it systems at the Technical University of Munich.
+  logo:
+    <svg xmlns:svg="http://www.w3.org/2000/svg" width="100px" xmlns="http://www.w3.org/2000/svg" viewBox="-16.014 -31 408.16 212.46684" enable-background="new -16.014 -31 149 114" xml:space="preserve" sodipodi:docname="TUM_Web_Logo_blau.svg" inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"><metadata id="metadata13"><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/><dc:title>TUM_Web_Logo_blau</dc:title></cc:Work></rdf:RDF></metadata><defs id="defs11"/><sodipodi:namedview pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" objecttolerance="10" gridtolerance="10" guidetolerance="10" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-width="1920" inkscape:window-height="986" id="namedview9" showgrid="false" fit-margin-top="0" fit-margin-left="0" fit-margin-right="0" fit-margin-bottom="0" inkscape:zoom="1.754386" inkscape:cx="124.61021" inkscape:cy="115.2546" inkscape:window-x="-11" inkscape:window-y="-11" inkscape:window-maximized="1" inkscape:current-layer="Ebene_1"/>
+    <path fill="#3070b3" d="m 140.54052,-31 v 173.32822 h 44.72985 V -31 H 392.146 V 181.46685 H 353.00738 V 8.138629 H 308.2775 V 181.46685 H 269.13887 V 8.138629 H 224.40902 V 181.46685 H 101.4019 V 8.138629 H 62.26327 V 181.46685 H 23.12462 V 8.138629 H -16.014 V -31 Z" id="path6" style="stroke-width:5.59123"/>
+    </svg>
+  fields:
+    - name: Email (optional)
+      description: In case you want us to be able to contact you via mail for further questions.
+      required: false
+      type: email
+    - name: What type of security risk did you encounter?
+      description: e.g., a potential vulnerability in a system or application, suspicious activity on a network, unauthorized access to sensitive data
+      required: true
+      type: textarea
+    - name: Where did you encounter the security risk?
+      description: e.g., the name of the system or application, the location or department where the risk was observed
+      required: true
+      type: textarea
+    - name: When did you encounter the security risk?
+      description: e.g., the date and time when the risk was discovered
+      required: true
+      type: text
+    - name: What is the impact of the security risk?
+      description: e.g., the potential consequences if the risk was not addressed, such as data loss or a security breach
+      required: true
+      type: textarea
+    - name: (How) did you respond to the security risk?
+      description: e.g., the actions you took to address the risk, such as reporting it to IT or stopping the activity
+      required: true
+      type: textarea
+    - name: Files (optional)
+      description: Please attach files that seem relevant to you and help us identifying the issue or affected system/s. Be careful to remove metadata as necessary.
+      required: false
+      type: file
+
+# config for forwarding messages
+forward:
+  # message will be emailed here:
+  email:
+    sender: meldung@security.tum.de
+    target: meldung@security.tum.de
+  # send a matrix message to a room https://matrix.org/docs/guides/client-server-api#login
+  matrix:
+    accessToken: abc123
+    roomID: abc123
+    homeServer: matrix.org
+  # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
+  webhook:
+    target: https://webhook.url/myhook
