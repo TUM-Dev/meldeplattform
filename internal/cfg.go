@@ -34,6 +34,8 @@ type config struct {
 		Matrix  *messaging.MatrixConfig  `yaml:"matrix"`
 		Webhook *messaging.WebhookConfig `yaml:"webhook"`
 	} `yaml:"forward"`
+	FileDir string `yaml:"fileDir"`
+	URL     string `yaml:"URL"`
 }
 
 func (a *App) initCfg() error {

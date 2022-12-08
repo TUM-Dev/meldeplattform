@@ -1,0 +1,31 @@
+<html lang="en">
+<head>
+    {{- /*gotype: github.com/joschahenningsen/meldeplattform/internal.ReportPageData*/ -}}
+    <title>{{.Config.Content.Title}} | Report</title>
+    <link rel="stylesheet" href="/static/css/skeleton.css">
+    <link rel="stylesheet" href="/static/css/normalize.css">
+</head>
+
+<body>
+<div class="container">
+    <div style="display: flex; flex-direction: row; justify-content: space-between;">
+        <h1 style="flex-grow: 1; margin: auto;">Report {{.Report.CreatedAt.Format "02.01.2006 15:04"}}</h1>
+        <span style="padding: 2rem;">{{.Config.GetLogo}}</span>
+    </div>
+    {{range .Report.Messages}}
+        <span>{{.CreatedAt.Format "02.01.2006 15:04"}}</span>
+        <p>
+            {{.GetBody}}
+        </p>
+        <hr>
+    {{end}}
+    <form class="row" method="post" action="/submit" enctype="multipart/form-data">
+        <label class="12 columns">
+            Reply
+            <textarea class="12 columns"></textarea>
+        </label>
+        <input type="submit" value="Absenden">
+    </form>
+</div>
+</body>
+</html>

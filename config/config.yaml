@@ -58,3 +58,6 @@ forward:
   # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
   webhook:
     target: https://webhook.url/myhook
+# uploads are saved here:
+fileDir: files
+URL: http://localhost:8080
