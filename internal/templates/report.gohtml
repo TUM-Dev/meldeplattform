@@ -12,6 +12,13 @@
         <h1 style="flex-grow: 1; margin: auto;">Report {{.Report.CreatedAt.Format "02.01.2006 15:04"}}</h1>
         <span style="padding: 2rem;">{{.Config.GetLogo}}</span>
     </div>
+    {{if not .IsAdministrator}}
+        <p>
+            This page allows you to further communicate with us about the report you filed.<br>
+            Make sure to <b>bookmark, save, write down, etc.</b> the URL and check for our answers and questions regularly.
+        </p>
+    {{end}}
+    <hr>
     {{range .Report.Messages}}
         <span>{{.CreatedAt.Format "02.01.2006 15:04"}}</span>
         <p>
