@@ -9,7 +9,8 @@ import (
 )
 
 type config struct {
-	Port    int `yaml:"port"`
+	Port    int    `yaml:"port"`
+	Mode    string `yaml:"mode"`
 	Content struct {
 		Title   string `yaml:"title"`
 		Summary string `yaml:"summary"`

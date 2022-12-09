@@ -7,6 +7,9 @@ port: 8080
 #  cert: /path/to/cert.pem
 #  key: /path/to/key.pem
 
+# dev or prod. in prod mode the logs will not include requests ip addresses
+mode: dev
+
 content:
   title: Meldeplattform
   summary: Here you can post anonymous reports about security issues you found in it systems at the Technical University of Munich.

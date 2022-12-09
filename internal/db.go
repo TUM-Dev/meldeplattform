@@ -12,7 +12,7 @@ func (a *App) initDB() error {
 		return fmt.Errorf("open database: %w", err)
 	}
 	// Migrate the schema
-	err = db.Debug().AutoMigrate(
+	err = db.AutoMigrate(
 		&Message{},
 		&Report{},
 		&File{},

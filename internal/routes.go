@@ -148,3 +148,18 @@ func (a *App) reportRoute(c *gin.Context) {
 		fmt.Println(err)
 	}
 }
+
+func (a *App) getFile(c *gin.Context) {
+	fileID := c.Query("id")
+	if fileID == "" {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	res := File{}
+	err := a.db.Where("uuid = ?", fileID).Find(&res).Error
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	c.FileAttachment(res.Location, res.Name)
+}
