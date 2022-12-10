@@ -35,7 +35,8 @@ type Message struct {
 
 	ReportID uint `gorm:"not null"`
 
-	Files []File `gorm:"many2many:message_files;"`
+	Files   []File `gorm:"many2many:message_files;"`
+	IsAdmin bool   `gorm:"default:false"`
 }
 
 type File struct {

@@ -4,6 +4,7 @@
     <title>{{.Config.Content.Title}} | Report</title>
     <link rel="stylesheet" href="/static/css/skeleton.css">
     <link rel="stylesheet" href="/static/css/normalize.css">
+    <link rel="stylesheet" href="/static/css/main.css">
 </head>
 
 <body>
@@ -15,21 +16,29 @@
     {{if not .IsAdministrator}}
         <p>
             This page allows you to further communicate with us about the report you filed.<br>
-            Make sure to <b>bookmark, save, write down, etc.</b> the URL and check for our answers and questions regularly.
+            Make sure to <b>bookmark, save, write down, etc.</b> the URL and check for our answers and questions
+            regularly.
         </p>
     {{end}}
     <hr>
+    {{$admin := .IsAdministrator}}
     {{range .Report.Messages}}
-        <span>{{.CreatedAt.Format "02.01.2006 15:04"}}</span>
-        <p>
-            {{.GetBody}}
-        </p>
-        <hr>
+        <div class="chat {{if eq .IsAdmin $admin}}chat-end{{else}}chat-start{{end}}">
+            <div class="chat-bubble">
+                <span style="font-weight: bold; color:#3070b3">
+                    {{.CreatedAt.Format "02.01.2006 15:04"}}
+                </span>
+                <p>
+                    {{.GetBody}}
+                </p>
+            </div>
+        </div>
     {{end}}
-    <form class="row" method="post" action="/submit" enctype="multipart/form-data">
+    <hr>
+    <form class="row" method="post">
         <label class="12 columns">
             Reply
-            <textarea class="12 columns"></textarea>
+            <textarea name="reply" class="12 columns"></textarea>
         </label>
         <input type="submit" value="Absenden">
     </form>

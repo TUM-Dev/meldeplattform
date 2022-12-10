@@ -27,6 +27,7 @@ func (a *App) initRoutes() {
 	a.engine.POST("/submit", a.submitRoute)
 	a.engine.GET("/file/:name", a.getFile)
 	a.engine.GET("/report", a.reportRoute)
+	a.engine.POST("/report", a.replyRoute)
 	a.engine.StaticFS("/static", http.FS(static))
 }
 
@@ -125,14 +126,15 @@ func (a *App) reportRoute(c *gin.Context) {
 	administratorToken := c.Query("administratorToken")
 	if administratorToken != "" {
 		d.IsAdministrator = true
-		if err := a.db.Where("administrator_token = ?", administratorToken).Find(&d.Report).Error; err != nil {
+		if err := a.db.Where("administrator_token = ?", administratorToken).
+			Preload("Messages").
+			Find(&d.Report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 	} else if reporterToken != "" {
 		d.IsAdministrator = false
-		if err := a.db.Debug().
-			Where("reporter_token = ?", reporterToken).
+		if err := a.db.Where("reporter_token = ?", reporterToken).
 			Preload("Messages").
 			Find(&d.Report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
@@ -162,4 +164,36 @@ func (a *App) getFile(c *gin.Context) {
 		return
 	}
 	c.FileAttachment(res.Location, res.Name)
+}
+
+func (a *App) replyRoute(c *gin.Context) {
+	reporterToken := c.Query("reporterToken")
+	administratorToken := c.Query("administratorToken")
+	isAdmin := false
+	report := Report{}
+	if reporterToken != "" {
+		if err := a.db.Where("reporter_token = ?", reporterToken).Find(&report).Error; err != nil {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+	} else if administratorToken == "" {
+		isAdmin = true
+		if err := a.db.Where("administrator_token = ?", administratorToken).Find(&report).Error; err != nil {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+	} else {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "no token provided")
+		return
+	}
+	a.db.Create(&Message{
+		Content:  c.PostForm("reply"),
+		ReportID: report.ID,
+		IsAdmin:  isAdmin,
+	})
+	if isAdmin {
+		c.Redirect(http.StatusFound, "/report?administratorToken="+administratorToken)
+	} else {
+		c.Redirect(http.StatusFound, "/report?reporterToken="+reporterToken)
+	}
 }
