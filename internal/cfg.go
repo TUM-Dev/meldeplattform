@@ -12,18 +12,9 @@ type config struct {
 	Port    int    `yaml:"port"`
 	Mode    string `yaml:"mode"`
 	Content struct {
-		Title   string `yaml:"title"`
-		Summary string `yaml:"summary"`
-		Logo    string `yaml:"logo"`
-		Fields  []struct {
-			Name        string `yaml:"name"`
-			Type        string `yaml:"type"` // e.g. file, text, email, textarea,
-			Required    bool   `yaml:"required"`
-			Description string `yaml:"description"`
-
-			// For select inputs:
-			Choices *[]string `yaml:"choices"`
-		} `yaml:"fields"`
+		Title  string  `yaml:"title"`
+		Logo   string  `yaml:"logo"`
+		Topics []topic `yaml:"topics"`
 	} `yaml:"content"`
 	HTTPS struct {
 		Port int    `yaml:"port"`
@@ -37,6 +28,20 @@ type config struct {
 	} `yaml:"forward"`
 	FileDir string `yaml:"fileDir"`
 	URL     string `yaml:"URL"`
+}
+
+type topic struct {
+	Name    string `yaml:"name"`
+	Summary string `yaml:"summary"`
+	Fields  []struct {
+		Name        string `yaml:"name"`
+		Type        string `yaml:"type"` // e.g. file, text, email, textarea,
+		Required    bool   `yaml:"required"`
+		Description string `yaml:"description"`
+
+		// For select inputs:
+		Choices *[]string `yaml:"choices"`
+	} `yaml:"fields"`
 }
 
 func (a *App) initCfg() error {

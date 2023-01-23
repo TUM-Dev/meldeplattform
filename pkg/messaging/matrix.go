@@ -16,7 +16,8 @@ func NewMatrixMessenger(config MatrixConfig) *MatrixMessenger {
 	return &MatrixMessenger{config: config}
 }
 
-func (m *MatrixMessenger) SendMessage(message string) error {
+func (m *MatrixMessenger) SendMessage(title, message string) error {
+	fmt.Println(title)
 	fmt.Println(message)
 	return nil
 }

@@ -1,0 +1,43 @@
+{{define "form"}}
+    <p>
+        {{.Summary}}
+    </p>
+    <hr>
+    <form method="post" action="/submit" enctype="multipart/form-data">
+        {{range $i, $field := .Fields}}
+            <div style="margin-bottom: 3rem">
+                <label class="row">
+                    <span class="12 columns" style="margin-left: 0">{{$field.Name}}</span>
+                    {{if eq $field.Type "textarea"}}
+                        <textarea class="12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
+                                  name="{{$i}}"></textarea>
+
+                    {{else if eq $field.Type "select"}}
+                        <select class="12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
+                                name="{{$i}}">
+                            {{range $field.Choices}}
+                                <option>{{.}}</option>
+                            {{end}}
+                        </select>
+                    {{else if eq $field.Type "checkbox"}}
+                        <input style="margin-left: 0"
+                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
+                               name="{{$i}}">
+                    {{else if eq $field.Type "file"}}
+                        <input class="12 columns" style="margin-left: 0" multiple
+                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
+                               name="{{$i}}">
+                    {{else}}
+                        <input class="12 columns" style="margin-left: 0"
+                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
+                               name="{{$i}}">
+                    {{end}}
+                </label>
+                <p>
+                    {{$field.Description}}
+                </p>
+            </div>
+        {{end}}
+        <input type="submit" value="Absenden">
+    </form>
+{{end}}

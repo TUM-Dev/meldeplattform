@@ -14,7 +14,8 @@ func NewWebhookMessenger(config WebhookConfig) *WebhookMessenger {
 	return &WebhookMessenger{config: config}
 }
 
-func (m *WebhookMessenger) SendMessage(message string) error {
+func (m *WebhookMessenger) SendMessage(title, message string) error {
+	fmt.Println(title)
 	fmt.Println(message)
 	return nil
 }

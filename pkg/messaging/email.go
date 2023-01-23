@@ -15,7 +15,8 @@ func NewEmailMessenger(config EmailConfig) *EmailMessenger {
 	return &EmailMessenger{config: config}
 }
 
-func (m *EmailMessenger) SendMessage(message string) error {
+func (m *EmailMessenger) SendMessage(title, message string) error {
+	fmt.Println(title)
 	fmt.Println(message)
 	return nil
 }

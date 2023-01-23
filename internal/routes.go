@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,8 +23,17 @@ var static embed.FS
 func (a *App) initRoutes() {
 	dir, err := templates.ReadDir("/")
 	fmt.Println(dir, err)
-	a.template = template.Must(template.New("base").ParseFS(templates, "templates/*.gohtml"))
+	funcs := map[string]interface{}{
+		"getByIndex": func(els []topic, i *int) topic {
+			if i == nil {
+				return topic{}
+			}
+			return els[*i]
+		},
+	}
+	a.template = template.Must(template.New("base").Funcs(funcs).ParseFS(templates, "templates/*.gohtml"))
 	a.engine.GET("/", a.indexRoute)
+	a.engine.GET("/form/:topicID", a.formRoute)
 	a.engine.POST("/submit", a.submitRoute)
 	a.engine.GET("/file/:name", a.getFile)
 	a.engine.GET("/report", a.reportRoute)
@@ -32,10 +42,34 @@ func (a *App) initRoutes() {
 }
 
 func (a *App) indexRoute(c *gin.Context) {
-	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", a.config)
+	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", struct {
+		Topic *int
+		config
+	}{nil, a.config})
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (a *App) formRoute(c *gin.Context) {
+	var topic *int
+	t := c.GetInt("topicID")
+	if t < 0 || t >= len(a.config.Content.Topics) {
+		topic = nil
+	} else {
+		topic = intPtr(t)
+	}
+	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", struct {
+		Topic *int
+		config
+	}{topic, a.config})
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }
 
 func (a *App) submitRoute(c *gin.Context) {
@@ -45,8 +79,8 @@ func (a *App) submitRoute(c *gin.Context) {
 		return
 	}
 
-	for i, field := range a.config.Content.Fields {
-		message += "<b>" + field.Name + "</b><br>\n"
+	for i, field := range a.config.Content.Topics[0].Fields {
+		message += "\n**" + field.Name + "**\n"
 
 		// handle text-ish fields
 		if field.Type != "file" {
@@ -55,7 +89,7 @@ func (a *App) submitRoute(c *gin.Context) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, "required field not provided")
 				return
 			}
-			message += fieldResp + "<br>\n<br>\n"
+			message += fieldResp + "\n"
 			continue
 		}
 
@@ -90,8 +124,7 @@ func (a *App) submitRoute(c *gin.Context) {
 					Name:     f.Filename,
 				}
 				a.db.Create(&dbFile)
-				message += "<a href=\"" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + "\">" +
-					dbFile.Name + "</a>" + "<br>\n"
+				message += "[" + dbFile.Name + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
 			}
 		}
 	}
@@ -105,6 +138,12 @@ func (a *App) submitRoute(c *gin.Context) {
 	err = a.db.Create(&dbReport).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't create report")
+	}
+	for _, m := range a.config.getMessengers() {
+		err := m.SendMessage(fmt.Sprintf("Report #%d opened", dbReport.ID), message)
+		if err != nil {
+			log.Println("Can't send message:", err)
+		}
 	}
 	c.Redirect(http.StatusFound, "/report?reporterToken="+dbReport.ReporterToken)
 }
@@ -176,7 +215,7 @@ func (a *App) replyRoute(c *gin.Context) {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
-	} else if administratorToken == "" {
+	} else if administratorToken != "" {
 		isAdmin = true
 		if err := a.db.Where("administrator_token = ?", administratorToken).Find(&report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)

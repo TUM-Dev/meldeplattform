@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
 	"html/template"
 	"time"
@@ -70,11 +71,11 @@ func (r *Report) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (m *Message) GetBody() template.HTML {
+	html := blackfriday.Run([]byte(m.Content), blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.HardLineBreak))
 	p := bluemonday.NewPolicy()
 	p.AllowStandardURLs()
 	p.AllowAttrs("href").OnElements("a")
-	p.AllowElements("b")
-	p.AllowElements("br")
-	sanitized := p.Sanitize(m.Content)
+	p.AllowElements("b", "br", "strong", "p", "ul", "li")
+	sanitized := p.Sanitize(string(html))
 	return template.HTML(sanitized)
 }

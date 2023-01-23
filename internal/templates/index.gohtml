@@ -1,6 +1,5 @@
 <html lang="en">
 <head>
-    {{- /*gotype: github.com/joschahenningsen/meldung/internal.config*/ -}}
     <title>{{.Content.Title}}</title>
     <link rel="stylesheet" href="/static/css/skeleton.css">
     <link rel="stylesheet" href="/static/css/normalize.css">
@@ -12,46 +11,16 @@
         <h1 style="flex-grow: 1; margin: auto;">{{.Content.Title}}</h1>
         <span style="padding: 2rem;">{{.GetLogo}}</span>
     </div>
-    <p>
-        {{.Content.Summary}}
-    </p>
-    <hr>
-    <form method="post" action="/submit" enctype="multipart/form-data">
-        {{range $i, $field := .Content.Fields}}
-            <div style="margin-bottom: 3rem">
-                <label class="row">
-                    <span class="12 columns" style="margin-left: 0">{{$field.Name}}</span>
-                    {{if eq $field.Type "textarea"}}
-                        <textarea class="12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
-                                  name="{{$i}}"></textarea>
-
-                    {{else if eq $field.Type "select"}}
-                        <select class="12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
-                                name="{{$i}}">
-                            {{range $field.Choices}}
-                                <option>{{.}}</option>
-                            {{end}}
-                        </select>
-                    {{else if eq $field.Type "checkbox"}}
-                        <input style="margin-left: 0"
-                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
-                               name="{{$i}}">
-                    {{else if eq $field.Type "file"}}
-                        <input class="12 columns" style="margin-left: 0" multiple
-                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
-                               name="{{$i}}">
-                    {{else}}
-                        <input class="12 columns" style="margin-left: 0"
-                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
-                               name="{{$i}}">
-                    {{end}}
-                </label>
-                <p>
-                    {{$field.Description}}
-                </p>
-            </div>
-        {{end}}
-        <input type="submit" value="Absenden">
+    <form>
+        <p>{{if eq .Topic nil}}Please select the type of issue you want to report:{{end}}</p>
+            {{if ne .Topic nil}}
+                {{template "form" (getByIndex .Content.Topics .Topic)}}
+            {{else}}
+                {{range $id, $c := .Content.Topics }}
+                        <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name}}</a><br>
+                        <p style="margin-top: 0">{{$c.Summary}}</p>
+                {{end}}
+            {{end}}
     </form>
 </div>
 </body>
