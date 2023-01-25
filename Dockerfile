@@ -1,22 +1,37 @@
-FROM golang:1.19-alpine3.17 as builder
+FROM golang:1.19-alpine3.17 AS dependencies
 
-# Create appuser
-RUN adduser -D -g '' appuser
+ENV GOPATH="/go"
 
-WORKDIR /app
-COPY . .
+RUN mkdir -p "$GOPATH/src" "$GOPATH/pkg"
+
+WORKDIR /src
+COPY go.mod go.sum ./
 
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -extldflags '-static'" -o /app cmd/meldung/meldung.go
-RUN chmod +x /app
 
-FROM scratch
+FROM golang:1.19-alpine3.17 AS builder
 
-COPY --from=builder /app /app
-COPY --from=builder /etc/passwd /etc/passwd
+ENV GOPATH="/go"
 
-# Use an unprivileged user
-USER appuser
+COPY --from=dependencies $GOPATH/pkg $GOPATH/pkg
+COPY --from=dependencies $GOPATH/src $GOPATH/src
+
+WORKDIR /src
+
+COPY . .
+
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app cmd/meldung/meldung.go
+
+FROM alpine:3.17
+
+RUN apk add --no-cache ca-certificates curl
 
 WORKDIR /
+
+COPY --from=builder /app /app
+COPY config /config
+
+EXPOSE 8080
+HEALTHCHECK CMD curl --fail http://localhost:8080 || exit 1
+
 CMD ["/app"]
