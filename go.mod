@@ -1,4 +1,4 @@
-module github.com/joschahenningsen/meldeplattform
+module github.com/TUM-Dev/meldeplattform
 
 go 1.19
 

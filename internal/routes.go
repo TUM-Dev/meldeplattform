@@ -3,6 +3,7 @@ package internal
 import (
 	"embed"
 	"fmt"
+	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -39,6 +41,37 @@ func (a *App) initRoutes() {
 	a.engine.GET("/report", a.reportRoute)
 	a.engine.POST("/report", a.replyRoute)
 	a.engine.StaticFS("/static", http.FS(static))
+	a.engine.POST("/setStatus/:administratorToken", a.setStatus)
+}
+
+func (a *App) setStatus(c *gin.Context) {
+	administratorToken := c.Param("administratorToken")
+	if administratorToken == "" {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	report := model.Report{}
+	if err := a.db.Where("administrator_token = ?", administratorToken).
+		Find(&report).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	var r struct{ Status string }
+	err := c.BindJSON(&r)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	switch r.Status {
+	case "open":
+		report.State = model.ReportStateOpen
+	case "done":
+		report.State = model.ReportStateDone
+	}
+	if err := a.db.Debug().Save(&report).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 }
 
 func (a *App) indexRoute(c *gin.Context) {
@@ -53,12 +86,20 @@ func (a *App) indexRoute(c *gin.Context) {
 
 func (a *App) formRoute(c *gin.Context) {
 	var topic *int
-	t := c.GetInt("topicID")
-	if t < 0 || t >= len(a.config.Content.Topics) {
-		topic = nil
-	} else {
-		topic = intPtr(t)
+	t := c.Param("topicID")
+	if t != "" {
+		atoi, err := strconv.Atoi(t)
+		if err != nil {
+			topic = nil
+		} else {
+			if atoi >= len(a.config.Content.Topics) || atoi < 0 {
+				topic = nil
+			} else {
+				topic = &atoi
+			}
+		}
 	}
+
 	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", struct {
 		Topic *int
 		config
@@ -68,10 +109,6 @@ func (a *App) formRoute(c *gin.Context) {
 	}
 }
 
-func intPtr(i int) *int {
-	return &i
-}
-
 func (a *App) submitRoute(c *gin.Context) {
 	message := ""
 	err := c.Request.ParseMultipartForm(32 << 20)
@@ -79,7 +116,8 @@ func (a *App) submitRoute(c *gin.Context) {
 		return
 	}
 
-	for i, field := range a.config.Content.Topics[0].Fields {
+	topic := a.config.Content.Topics[0] // todo: get topic from form
+	for i, field := range topic.Fields {
 		message += "\n**" + field.Name + "**\n"
 
 		// handle text-ish fields
@@ -119,7 +157,7 @@ func (a *App) submitRoute(c *gin.Context) {
 				}
 				_ = file.Close()
 				_ = open.Close()
-				dbFile := File{
+				dbFile := model.File{
 					Location: filePath,
 					Name:     f.Filename,
 				}
@@ -128,19 +166,19 @@ func (a *App) submitRoute(c *gin.Context) {
 			}
 		}
 	}
-	dbMsg := Message{
+	dbMsg := model.Message{
 		Content: message,
 	}
-	dbReport := Report{
-		Messages: []Message{dbMsg},
-		State:    ReportStateOpen,
+	dbReport := model.Report{
+		Messages: []model.Message{dbMsg},
+		State:    model.ReportStateOpen,
 	}
 	err = a.db.Create(&dbReport).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't create report")
 	}
-	for _, m := range a.config.getMessengers() {
-		err := m.SendMessage(fmt.Sprintf("Report #%d opened", dbReport.ID), message)
+	for _, m := range topic.getMessengers() {
+		err := m.SendMessage(fmt.Sprintf("Report #%d opened", dbReport.ID), dbMsg, a.config.URL+"/report?administratorToken="+dbReport.AdministratorToken)
 		if err != nil {
 			log.Println("Can't send message:", err)
 		}
@@ -150,7 +188,7 @@ func (a *App) submitRoute(c *gin.Context) {
 
 type ReportPageData struct {
 	Config config
-	Report Report
+	Report *model.Report
 
 	IsAdministrator bool
 }
@@ -158,7 +196,7 @@ type ReportPageData struct {
 func (a *App) reportRoute(c *gin.Context) {
 	d := ReportPageData{
 		Config: a.config,
-		Report: Report{},
+		Report: &model.Report{},
 	}
 
 	reporterToken := c.Query("reporterToken")
@@ -167,7 +205,7 @@ func (a *App) reportRoute(c *gin.Context) {
 		d.IsAdministrator = true
 		if err := a.db.Where("administrator_token = ?", administratorToken).
 			Preload("Messages").
-			Find(&d.Report).Error; err != nil {
+			Find(d.Report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -175,7 +213,7 @@ func (a *App) reportRoute(c *gin.Context) {
 		d.IsAdministrator = false
 		if err := a.db.Where("reporter_token = ?", reporterToken).
 			Preload("Messages").
-			Find(&d.Report).Error; err != nil {
+			Find(d.Report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -196,7 +234,7 @@ func (a *App) getFile(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	res := File{}
+	res := model.File{}
 	err := a.db.Where("uuid = ?", fileID).Find(&res).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -209,7 +247,7 @@ func (a *App) replyRoute(c *gin.Context) {
 	reporterToken := c.Query("reporterToken")
 	administratorToken := c.Query("administratorToken")
 	isAdmin := false
-	report := Report{}
+	report := model.Report{}
 	if reporterToken != "" {
 		if err := a.db.Where("reporter_token = ?", reporterToken).Find(&report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
@@ -225,7 +263,7 @@ func (a *App) replyRoute(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "no token provided")
 		return
 	}
-	a.db.Create(&Message{
+	a.db.Create(&model.Message{
 		Content:  c.PostForm("reply"),
 		ReportID: report.ID,
 		IsAdmin:  isAdmin,

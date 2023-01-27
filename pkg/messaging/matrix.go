@@ -1,6 +1,14 @@
 package messaging
 
-import "fmt"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/TUM-Dev/meldeplattform/pkg/model"
+	"io"
+	"log"
+	"net/http"
+)
 
 type MatrixMessenger struct {
 	config MatrixConfig
@@ -16,8 +24,24 @@ func NewMatrixMessenger(config MatrixConfig) *MatrixMessenger {
 	return &MatrixMessenger{config: config}
 }
 
-func (m *MatrixMessenger) SendMessage(title, message string) error {
-	fmt.Println(title)
-	fmt.Println(message)
-	return nil
+const matrixMSGApiURL = "https://%s/_matrix/client/r0/rooms/%s/send/m.room.message?access_token=%s"
+
+func (m *MatrixMessenger) SendMessage(title string, message model.Message, reportURL string) error {
+	msg := map[string]string{
+		"msgtype":        "m.text",
+		"format":         "org.matrix.custom.html",
+		"formatted_body": "<h1>" + title + "</h1>" + string(message.GetBody()) + "<br><a href=\"" + reportURL + "\">View Report</a>",
+		"body":           "# " + title + "\n\n" + message.Content + "\n\nView Report: " + reportURL}
+	marshal, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(
+		fmt.Sprintf(matrixMSGApiURL, m.config.HomeServer, m.config.RoomID, m.config.AccessToken),
+		"application/json",
+		bytes.NewBuffer(marshal),
+	)
+	r, err := io.ReadAll(resp.Body)
+	log.Println(string(r), err)
+	return err
 }

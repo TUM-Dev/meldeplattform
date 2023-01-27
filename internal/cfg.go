@@ -2,7 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"github.com/joschahenningsen/meldeplattform/pkg/messaging"
+	"github.com/TUM-Dev/meldeplattform/pkg/messaging"
 	"gopkg.in/yaml.v2"
 	"html/template"
 	"os"
@@ -21,11 +21,6 @@ type config struct {
 		Cert string `yaml:"cert"`
 		Key  string `yaml:"key"`
 	} `yaml:"https"`
-	Forward struct {
-		Email   *messaging.EmailConfig   `yaml:"email"`
-		Matrix  *messaging.MatrixConfig  `yaml:"matrix"`
-		Webhook *messaging.WebhookConfig `yaml:"webhook"`
-	} `yaml:"forward"`
 	FileDir string `yaml:"fileDir"`
 	URL     string `yaml:"URL"`
 }
@@ -42,6 +37,11 @@ type topic struct {
 		// For select inputs:
 		Choices *[]string `yaml:"choices"`
 	} `yaml:"fields"`
+	Contacts struct {
+		Email   *messaging.EmailConfig   `yaml:"email"`
+		Matrix  *messaging.MatrixConfig  `yaml:"matrix"`
+		Webhook *messaging.WebhookConfig `yaml:"webhook"`
+	} `yaml:"contacts"`
 }
 
 func (a *App) initCfg() error {
@@ -56,17 +56,17 @@ func (a *App) initCfg() error {
 	return nil
 }
 
-func (c config) getMessengers() []messaging.Messenger {
+func (t topic) getMessengers() []messaging.Messenger {
 	var messengers []messaging.Messenger
 
-	if c.Forward.Email != nil {
-		messengers = append(messengers, messaging.NewEmailMessenger(*c.Forward.Email))
+	if t.Contacts.Email != nil {
+		messengers = append(messengers, messaging.NewEmailMessenger(*t.Contacts.Email))
 	}
-	if c.Forward.Matrix != nil {
-		messengers = append(messengers, messaging.NewMatrixMessenger(*c.Forward.Matrix))
+	if t.Contacts.Matrix != nil {
+		messengers = append(messengers, messaging.NewMatrixMessenger(*t.Contacts.Matrix))
 	}
-	if c.Forward.Webhook != nil {
-		messengers = append(messengers, messaging.NewWebhookMessenger(*c.Forward.Webhook))
+	if t.Contacts.Webhook != nil {
+		messengers = append(messengers, messaging.NewWebhookMessenger(*t.Contacts.Webhook))
 	}
 
 	return messengers

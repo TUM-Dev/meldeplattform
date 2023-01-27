@@ -48,21 +48,39 @@ content:
           description: Please attach files that seem relevant to you and help us identifying the issue or affected system/s. Be careful to remove metadata as necessary.
           required: false
           type: file
+      contacts:
+        email:
+          relay: mailrelay.tum.de
+          sender: meldung@security.tum.de
+          target: meldung@security.tum.de
+        # send a matrix message to a room https://matrix.org/docs/guides/client-server-api#login
+        matrix:
+          accessToken: "demo"
+          roomID: "!room123:matrix.org"
+          homeServer: "matrix.org"
+        # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
+        webhook:
+          target: https://webhook.url/myhook
+    - name: Compliance
+      summary: Here you can post anonymous reports about any compliance issues you are concerned about at the Technical University of Munich
+      fields:
+        - name: Email
+          description: In case you want us to be able to contact you via mail for further questions.
+          required: true
+          type: email
+        - name: What type of compliance issue did you encounter?
+          description: e.g., ...
+          required: true
+          type: textarea
+      contacts:
+        email:
+          relay: mailrelay.tum.de
+          sender: meldung@security.tum.de
+          target: meldung@security.tum.de
+        # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
+        # webhook:
+        #   target: https://webhook.url/myhook
 
-# config for forwarding messages
-forward:
-  # message will be emailed here:
-  email:
-    sender: meldung@security.tum.de
-    target: meldung@security.tum.de
-  # send a matrix message to a room https://matrix.org/docs/guides/client-server-api#login
-  matrix:
-    accessToken: abc123
-    roomID: abc123
-    homeServer: matrix.org
-  # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
-  webhook:
-    target: https://webhook.url/myhook
 # uploads are saved here:
 fileDir: files
 URL: http://localhost:8080

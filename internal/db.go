@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"github.com/glebarez/sqlite"
+	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"gorm.io/gorm"
 )
 
@@ -13,9 +14,9 @@ func (a *App) initDB() error {
 	}
 	// Migrate the schema
 	err = db.AutoMigrate(
-		&Message{},
-		&Report{},
-		&File{},
+		&model.Message{},
+		&model.Report{},
+		&model.File{},
 	)
 	if err != nil {
 		return fmt.Errorf("migrate db: %w", err)

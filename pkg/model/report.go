@@ -1,4 +1,4 @@
-package internal
+package model
 
 import (
 	"github.com/google/uuid"
@@ -26,6 +26,28 @@ type Report struct {
 	Messages []Message `gorm:"foreignKey:ReportID;constraint:OnDelete:CASCADE"`
 
 	State ReportState
+}
+
+func (r *Report) GetStatusColor() template.CSS {
+	switch r.State {
+	case ReportStateOpen:
+		return "rgb(220 38 38)"
+	case ReportStateDone:
+		return "rgb(74 222 128)"
+	default:
+		return "black"
+	}
+}
+
+func (r *Report) GetStatusText() string {
+	switch r.State {
+	case ReportStateOpen:
+		return "Open"
+	case ReportStateDone:
+		return "Done"
+	default:
+		return "Unknown"
+	}
 }
 
 type Message struct {

@@ -11,17 +11,15 @@
         <h1 style="flex-grow: 1; margin: auto;">{{.Content.Title}}</h1>
         <span style="padding: 2rem;">{{.GetLogo}}</span>
     </div>
-    <form>
-        <p>{{if eq .Topic nil}}Please select the type of issue you want to report:{{end}}</p>
-            {{if ne .Topic nil}}
-                {{template "form" (getByIndex .Content.Topics .Topic)}}
-            {{else}}
-                {{range $id, $c := .Content.Topics }}
-                        <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name}}</a><br>
-                        <p style="margin-top: 0">{{$c.Summary}}</p>
-                {{end}}
+    <p>{{if eq .Topic nil}}Please select the type of issue you want to report:{{end}}</p>
+        {{if ne .Topic nil}}
+            {{template "form" (getByIndex .Content.Topics .Topic)}}
+        {{else}}
+            {{range $id, $c := .Content.Topics }}
+                    <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name}}</a><br>
+                    <p style="margin-top: 0">{{$c.Summary}}</p>
             {{end}}
-    </form>
+        {{end}}
 </div>
 </body>
 </html>

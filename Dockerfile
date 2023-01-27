@@ -24,6 +24,8 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app cmd/meldung/meldung.go
 
 FROM alpine:3.17
 
+# ca-certificates is required for making HTTPS requests to services like matrix, rocketchat, etc.
+# curl is required for healthchecks.
 RUN apk add --no-cache ca-certificates curl
 
 WORKDIR /

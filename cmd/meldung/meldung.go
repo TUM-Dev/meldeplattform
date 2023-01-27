@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/joschahenningsen/meldeplattform/internal"
+	"github.com/TUM-Dev/meldeplattform/internal"
 	"log"
 )
 

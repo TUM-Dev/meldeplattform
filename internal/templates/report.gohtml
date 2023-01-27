@@ -1,16 +1,19 @@
 <html lang="en">
 <head>
-    {{- /*gotype: github.com/joschahenningsen/meldeplattform/internal.ReportPageData*/ -}}
+    {{- /*gotype: github.com/TUM-Dev/meldeplattform/internal.ReportPageData*/ -}}
     <title>{{.Config.Content.Title}} | Report</title>
     <link rel="stylesheet" href="/static/css/skeleton.css">
     <link rel="stylesheet" href="/static/css/normalize.css">
     <link rel="stylesheet" href="/static/css/main.css">
+    <script defer src="/static/css/alpine.min.js"></script>
 </head>
 
 <body>
 <div class="container">
     <div style="display: flex; flex-direction: row; justify-content: space-between;">
-        <h1 style="flex-grow: 1; margin: auto;">Report {{.Report.CreatedAt.Format "02.01.2006 15:04"}}</h1>
+        <div style="flex-grow: 1; margin: auto">
+            <h1 style="flex-grow: 1">Report {{.Report.CreatedAt.Format "02.01.2006 15:04"}}</h1>
+        </div>
         <span style="padding: 2rem;">{{.Config.GetLogo}}</span>
     </div>
     {{if not .IsAdministrator}}
@@ -19,6 +22,12 @@
             Make sure to <b>bookmark, save, write down, etc.</b> the URL and check for our answers and questions
             regularly.
         </p>
+    {{else}}
+    <div style="margin: auto" x-data="{status: '{{.Report.State}}', text:'{{.Report.State}}'}">
+        <span role="button" class="pill pointer" :style="'background-color:'+(status=='open'?'rgb(220 38 38)':'rgb(74 222 128)')" x-text="text"
+              @mouseover="text=(status=='open'?'close':'reopen')" @mouseleave="text=status"
+              @click="status=(status=='open'?'done':'open'); fetch('/setStatus/'+'{{.Report.AdministratorToken}}', {method:'POST', body: JSON.stringify({status: status})})"></span>
+    </div>
     {{end}}
     <hr>
     {{$admin := .IsAdministrator}}
