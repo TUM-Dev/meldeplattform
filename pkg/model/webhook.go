@@ -1,9 +1,8 @@
-package messaging
+package model
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"net/http"
 )
 
@@ -19,7 +18,7 @@ func NewWebhookMessenger(config WebhookConfig) *WebhookMessenger {
 	return &WebhookMessenger{config: config}
 }
 
-func (m *WebhookMessenger) SendMessage(title string, message model.Message, reportURL string) error {
+func (m *WebhookMessenger) SendMessage(title string, message Message, reportURL string) error {
 	msg := map[string]string{"title": title, "message": string(message.GetBody())}
 	marshal, err := json.Marshal(msg)
 	if err != nil {

@@ -7,10 +7,9 @@
     "build": "npx tailwindcss -i ./src/input.css -o ./dist/main.css --minify && npx tsc src/ts/main.ts --outDir dist/js",
     "build-dev": "npx tailwindcss -i ./src/input.css -o ./dist/main.css --watch"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Joscha Henningsen",
+  "license": "MIT",
   "dependencies": {
-    "@tailwindcss/forms": "^0.5.3"
   },
   "devDependencies": {
     "tailwindcss": "^3.2.4",

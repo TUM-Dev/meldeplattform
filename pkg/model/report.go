@@ -1,12 +1,13 @@
 package model
 
 import (
+	"html/template"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"html/template"
-	"time"
 )
 
 type ReportState string

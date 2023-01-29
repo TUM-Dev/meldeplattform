@@ -1,10 +1,12 @@
 package internal
 
 import (
-	"embed"
-	"fmt"
+	"github.com/TUM-Dev/meldeplattform/pkg/middleware"
 	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"github.com/gin-gonic/gin"
+
+	"embed"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -29,15 +31,20 @@ func (a *App) initRoutes() {
 		fmt.Println(entry.Name())
 	}
 	funcs := map[string]interface{}{
-		"getByIndex": func(els []topic, i *int) topic {
+		"getByIndex": func(els []model.Topic, i *int) model.Topic {
 			if i == nil {
-				return topic{}
+				return model.Topic{}
 			}
 			return els[*i]
 		},
 	}
 	a.template = template.Must(template.New("base").Funcs(funcs).ParseFS(templates, "web/templates/*.gohtml"))
+
+	a.engine.Use(middleware.InitI18n)
+	a.engine.Use(middleware.InitTemplateBase(a.i18n, a.config))
+
 	a.engine.GET("/", a.indexRoute)
+	a.engine.GET("/setLang", a.setLang)
 	a.engine.GET("/form/:topicID", a.formRoute)
 	a.engine.POST("/submit", a.submitRoute)
 	a.engine.GET("/file/:name", a.getFile)
@@ -78,10 +85,12 @@ func (a *App) setStatus(c *gin.Context) {
 }
 
 func (a *App) indexRoute(c *gin.Context) {
-	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", struct {
-		Topic *int
-		config
-	}{nil, a.config})
+	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml",
+		model.Index{
+			Base:   c.MustGet("base").(model.Base),
+			Topics: a.config.Content.Topics,
+			Topic:  nil,
+		})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -103,10 +112,10 @@ func (a *App) formRoute(c *gin.Context) {
 		}
 	}
 
-	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", struct {
-		Topic *int
-		config
-	}{topic, a.config})
+	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
+		Topic: topic,
+		Base:  c.MustGet("base").(model.Base),
+	})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -119,9 +128,9 @@ func (a *App) submitRoute(c *gin.Context) {
 		return
 	}
 
-	topic := a.config.Content.Topics[0] // todo: get topic from form
+	topic := a.config.Content.Topics[0] // todo: get Topic from form
 	for i, field := range topic.Fields {
-		message += "\n**" + field.Name + "**\n"
+		message += "\n**" + field.Name.En + "**\n" // todo get language from somewhere
 
 		// handle text-ish fields
 		if field.Type != "file" {
@@ -180,7 +189,7 @@ func (a *App) submitRoute(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't create report")
 	}
-	for _, m := range topic.getMessengers() {
+	for _, m := range model.GetMessengers(topic) {
 		err := m.SendMessage(fmt.Sprintf("Report #%d opened", dbReport.ID), dbMsg, a.config.URL+"/report?administratorToken="+dbReport.AdministratorToken)
 		if err != nil {
 			log.Println("Can't send message:", err)
@@ -190,7 +199,7 @@ func (a *App) submitRoute(c *gin.Context) {
 }
 
 type ReportPageData struct {
-	Config config
+	Config model.Config
 	Report *model.Report
 
 	IsAdministrator bool

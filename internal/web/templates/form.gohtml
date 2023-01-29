@@ -1,40 +1,41 @@
 {{define "form"}}
+    {{$form := (getByIndex .Config.Content.Topics .Topic)}}
+    {{$lang := .Lang}}
     <p>
-        {{.Summary}}
+        {{$form.Summary.Tr $lang}}
     </p>
-    <hr>
-    <form method="post" action="/submit" enctype="multipart/form-data">
-        {{range $i, $field := .Fields}}
-            <div style="margin-bottom: 3rem">
-                <label class="row">
-                    <span class="12 columns" style="margin-left: 0">{{$field.Name}}</span>
+    <hr class="m-4">
+    <form method="post" action="/submit" enctype="multipart/form-data" class="mb-10">
+        {{range $i, $field := $form.Fields}}
+            <div class="my-4">
+                <label>
+                    <span class="w-full">{{$field.Name.Tr $lang}}</span>
                     {{if eq $field.Type "textarea"}}
-                        <textarea class="form-input 12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
+                        <textarea class="w-full" {{if $field.Required}} required{{end}}
                                   name="{{$i}}"></textarea>
 
                     {{else if eq $field.Type "select"}}
-                        <select class="12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
+                        <select class="w-full" {{if $field.Required}} required{{end}}
                                 name="{{$i}}">
                             {{range $field.Choices}}
                                 <option>{{.}}</option>
                             {{end}}
                         </select>
                     {{else if eq $field.Type "checkbox"}}
-                        <input style="margin-left: 0"
-                               type="{{$field.Type}}"{{if $field.Required}} required{{end}}
+                        <input type="{{$field.Type}}"{{if $field.Required}} required{{end}}
                                name="{{$i}}">
                     {{else if eq $field.Type "file"}}
-                        <input class="12 columns" style="margin-left: 0" multiple
+                        <input class="w-full" multiple
                                type="{{$field.Type}}"{{if $field.Required}} required{{end}}
                                name="{{$i}}">
                     {{else}}
-                        <input class="12 columns" style="margin-left: 0"
+                        <input class="w-full"
                                type="{{$field.Type}}"{{if $field.Required}} required{{end}}
                                name="{{$i}}">
                     {{end}}
                 </label>
                 <p>
-                    {{$field.Description}}
+                    {{$field.Description.Tr $lang}}
                 </p>
             </div>
         {{end}}

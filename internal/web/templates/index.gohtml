@@ -1,21 +1,22 @@
 <html lang="en">
 <head>
-    <title>{{.Content.Title}}</title>
+    <title>{{.Config.Content.Title.Tr .Lang}}</title>
     <link rel="stylesheet" href="/static/web/dist/main.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="bg-gray-50">
 {{template "header" .}}
+{{$lang := .Lang}}
 <div class="container">
-    <p>{{if eq .Topic nil}}Please select the type of issue you want to report:{{end}}</p>
+    <p>{{if eq .Topic nil}}{{.Tr.T $lang "select_topic_prompt"}}{{end}}</p>
         {{if ne .Topic nil}}
-            {{template "form" (getByIndex .Content.Topics .Topic)}}
+            {{template "form" .}}
         {{else}}
-            {{range $id, $c := .Content.Topics }}
+            {{range $id, $c := .Config.Content.Topics }}
                 <div class="my-2">
-                    <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name}}</a><br>
-                    <p style="margin-top: 0">{{$c.Summary}}</p>
+                    <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name.Tr $lang}}</a><br>
+                    <p style="margin-top: 0">{{$c.Summary.Tr $lang}}</p>
                 </div>
             {{end}}
         {{end}}

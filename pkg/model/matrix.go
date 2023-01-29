@@ -1,10 +1,9 @@
-package messaging
+package model
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"io"
 	"log"
 	"net/http"
@@ -26,7 +25,7 @@ func NewMatrixMessenger(config MatrixConfig) *MatrixMessenger {
 
 const matrixMSGApiURL = "https://%s/_matrix/client/r0/rooms/%s/send/m.room.message?access_token=%s"
 
-func (m *MatrixMessenger) SendMessage(title string, message model.Message, reportURL string) error {
+func (m *MatrixMessenger) SendMessage(title string, message Message, reportURL string) error {
 	msg := map[string]string{
 		"msgtype":        "m.text",
 		"format":         "org.matrix.custom.html",

@@ -1,21 +1,15 @@
 <html lang="en">
 <head>
-    {{- /*gotype: github.com/TUM-Dev/meldeplattform/internal.ReportPageData*/ -}}
     <title>{{.Config.Content.Title}} | Report</title>
-    <link rel="stylesheet" href="/static/css/skeleton.css">
-    <link rel="stylesheet" href="/static/css/normalize.css">
-    <link rel="stylesheet" href="/static/css/main.css">
-    <script defer src="/static/css/alpine.min.js"></script>
+    <link rel="stylesheet" href="/static/web/dist/main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
-<body>
+<body class="bg-gray-50">
+{{template "header" .Config}}
 <div class="container">
-    <div style="display: flex; flex-direction: row; justify-content: space-between;">
-        <div style="flex-grow: 1; margin: auto">
-            <h1 style="flex-grow: 1">Report {{.Report.CreatedAt.Format "02.01.2006 15:04"}}</h1>
-        </div>
-        <span style="padding: 2rem;">{{.Config.GetLogo}}</span>
-    </div>
+
+
     {{if not .IsAdministrator}}
         <p>
             This page allows you to further communicate with us about the report you filed.<br>

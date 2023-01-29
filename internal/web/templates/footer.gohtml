@@ -3,14 +3,16 @@
         <div class="container flex self-center">
             <div class="flex-grow flex justify-start">
                 <a href="/">
-                    Impressum
+                    {{.Tr.T .Lang "imprint"}}
                 </a>
                 <a href="/" class="ml-4">
-                    Datenschutz
+                    {{.Tr.T .Lang "privacy"}}
                 </a>
             </div>
             <div class="self-center">
-                <a href="https://github.com/TUM-Dev/meldeplattform">Sourcecode</a>
+                <a href="https://github.com/TUM-Dev/meldeplattform">
+                    {{.Tr.T .Lang "source"}}
+                </a>
             </div>
         </div>
     </div>

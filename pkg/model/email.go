@@ -1,7 +1,6 @@
-package messaging
+package model
 
 import (
-	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"log"
 	"net/smtp"
 	"strings"
@@ -21,7 +20,7 @@ func NewEmailMessenger(config EmailConfig) *EmailMessenger {
 	return &EmailMessenger{config: config}
 }
 
-func (m *EmailMessenger) SendMessage(title string, message model.Message, reportURL string) error {
+func (m *EmailMessenger) SendMessage(title string, message Message, reportURL string) error {
 	return m.sendMail(m.config.Relay, m.config.Sender, title, message.Content, []string{m.config.Target})
 }
 

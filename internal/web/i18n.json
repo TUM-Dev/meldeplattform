@@ -1,0 +1,26 @@
+{
+  "logout": {
+    "de": "Abmelden",
+    "en": "Logout"
+  },
+  "login": {
+    "de": "Anmelden",
+    "en": "Login"
+  },
+  "imprint": {
+    "de": "Impressum",
+    "en": "Imprint"
+  },
+  "privacy": {
+    "de": "Datenschutz",
+    "en": "Privacy"
+  },
+  "source": {
+    "de": "Quellcode",
+    "en": "Sourcecode"
+  },
+  "select_topic_prompt": {
+    "de": "Bitte wählen Sie den Typ des zu meldenenden Problems aus",
+    "en": "Please select the type of issue you want to report"
+  }
+}
