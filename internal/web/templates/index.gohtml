@@ -1,25 +1,25 @@
 <html lang="en">
 <head>
     <title>{{.Content.Title}}</title>
-    <link rel="stylesheet" href="/static/css/skeleton.css">
-    <link rel="stylesheet" href="/static/css/normalize.css">
+    <link rel="stylesheet" href="/static/web/dist/main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
-<body>
+<body class="bg-gray-50">
+{{template "header" .}}
 <div class="container">
-    <div style="display: flex; flex-direction: row; justify-content: space-between;">
-        <h1 style="flex-grow: 1; margin: auto;">{{.Content.Title}}</h1>
-        <span style="padding: 2rem;">{{.GetLogo}}</span>
-    </div>
     <p>{{if eq .Topic nil}}Please select the type of issue you want to report:{{end}}</p>
         {{if ne .Topic nil}}
             {{template "form" (getByIndex .Content.Topics .Topic)}}
         {{else}}
             {{range $id, $c := .Content.Topics }}
+                <div class="my-2">
                     <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name}}</a><br>
                     <p style="margin-top: 0">{{$c.Summary}}</p>
+                </div>
             {{end}}
         {{end}}
 </div>
+{{template "footer" .}}
 </body>
 </html>

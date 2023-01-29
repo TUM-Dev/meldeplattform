@@ -9,7 +9,7 @@
                 <label class="row">
                     <span class="12 columns" style="margin-left: 0">{{$field.Name}}</span>
                     {{if eq $field.Type "textarea"}}
-                        <textarea class="12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
+                        <textarea class="form-input 12 columns" style="margin-left: 0" {{if $field.Required}} required{{end}}
                                   name="{{$i}}"></textarea>
 
                     {{else if eq $field.Type "select"}}

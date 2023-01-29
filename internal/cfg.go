@@ -12,9 +12,10 @@ type config struct {
 	Port    int    `yaml:"port"`
 	Mode    string `yaml:"mode"`
 	Content struct {
-		Title  string  `yaml:"title"`
-		Logo   string  `yaml:"logo"`
-		Topics []topic `yaml:"topics"`
+		Title    string  `yaml:"title"`
+		SubTitle string  `yaml:"subtitle"`
+		Logo     string  `yaml:"logo"`
+		Topics   []topic `yaml:"topics"`
 	} `yaml:"content"`
 	HTTPS struct {
 		Port int    `yaml:"port"`

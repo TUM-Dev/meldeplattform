@@ -1,3 +1,9 @@
+FROM node:current-alpine3.17 as web
+
+WORKDIR /app
+COPY internal/web .
+RUN npm install && npm run build
+
 FROM golang:1.19-alpine3.17 AS dependencies
 
 ENV GOPATH="/go"
@@ -19,6 +25,7 @@ COPY --from=dependencies $GOPATH/src $GOPATH/src
 WORKDIR /src
 
 COPY . .
+COPY --from=web /app/dist internal/web/dist
 
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app cmd/meldung/meldung.go
 

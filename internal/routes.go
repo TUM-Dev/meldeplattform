@@ -16,15 +16,18 @@ import (
 	"time"
 )
 
-//go:embed templates
+//go:embed web/templates
 var templates embed.FS
 
-//go:embed css
+//go:embed web/dist
 var static embed.FS
 
 func (a *App) initRoutes() {
-	dir, err := templates.ReadDir("/")
-	fmt.Println(dir, err)
+	dir, err := templates.ReadDir(".")
+	fmt.Println(err)
+	for _, entry := range dir {
+		fmt.Println(entry.Name())
+	}
 	funcs := map[string]interface{}{
 		"getByIndex": func(els []topic, i *int) topic {
 			if i == nil {
@@ -33,7 +36,7 @@ func (a *App) initRoutes() {
 			return els[*i]
 		},
 	}
-	a.template = template.Must(template.New("base").Funcs(funcs).ParseFS(templates, "templates/*.gohtml"))
+	a.template = template.Must(template.New("base").Funcs(funcs).ParseFS(templates, "web/templates/*.gohtml"))
 	a.engine.GET("/", a.indexRoute)
 	a.engine.GET("/form/:topicID", a.formRoute)
 	a.engine.POST("/submit", a.submitRoute)

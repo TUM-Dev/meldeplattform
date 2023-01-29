@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* TUM Corporate: */
+
+a { padding-bottom: 1px; border-bottom: 1px solid gray; -webkit-transition: all 100ms linear; color: #333; text-decoration: none; transition: all 100ms linear; }
+
+a:hover{ border-bottom-width: 3px; border-bottom-color: #3c88d9; color: #3070b3; }
+
+.claim {
+    color:#3070b3;
+    font-size: 1em;
+    font-weight: normal;
+}
