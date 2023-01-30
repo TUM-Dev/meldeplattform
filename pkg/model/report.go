@@ -27,6 +27,8 @@ type Report struct {
 	Messages []Message `gorm:"foreignKey:ReportID;constraint:OnDelete:CASCADE"`
 
 	State ReportState
+
+	Creator *string `gorm:"type:varchar(512)"`
 }
 
 func (r *Report) GetStatusColor() template.CSS {
@@ -91,6 +93,10 @@ func (r *Report) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	r.AdministratorToken = id.String()
 	return nil
+}
+
+func (r *Report) DateFmt() string {
+	return r.CreatedAt.Format("02.01.2006 15:04")
 }
 
 func (m *Message) GetBody() template.HTML {

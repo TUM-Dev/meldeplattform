@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx tailwindcss -i ./src/input.css -o ./dist/main.css --minify && npx tsc src/ts/main.ts --outDir dist/js",
-    "build-dev": "npx tailwindcss -i ./src/input.css -o ./dist/main.css --watch"
+    "build": "npx tailwindcss -i ./src/input.css -o ./dist/main.css --minify && npx tsc src/ts/main.ts --outDir dist/js && cp node_modules/alpinejs/dist/cdn.min.js dist/alpine.js",
+    "build-dev": "npx tailwindcss -i ./src/input.css -o ./dist/main.css --watch && cp node_modules/alpinejs/dist/cdn.min.js dist/alpine.js"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
   "dependencies": {
+    "alpinejs": "^3.11.1"
   },
   "devDependencies": {
     "tailwindcss": "^3.2.4",

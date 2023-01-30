@@ -1,50 +1,32 @@
-<html lang="en">
+<html lang="{{.Lang}}">
 <head>
-    <title>{{.Config.Content.Title}} | Report</title>
+    <title>{{.Config.Content.Title.Tr .Lang}} | Report</title>
     <link rel="stylesheet" href="/static/web/dist/main.css">
+    <script defer src="/static/web/dist/alpine.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="bg-gray-50">
-{{template "header" .Config}}
+{{template "header" .}}
+{{$admin := .IsAdministrator}}
 <div class="container">
-
-
-    {{if not .IsAdministrator}}
-        <p>
-            This page allows you to further communicate with us about the report you filed.<br>
-            Make sure to <b>bookmark, save, write down, etc.</b> the URL and check for our answers and questions
-            regularly.
-        </p>
-    {{else}}
-    <div style="margin: auto" x-data="{status: '{{.Report.State}}', text:'{{.Report.State}}'}">
-        <span role="button" class="pill pointer" :style="'background-color:'+(status=='open'?'rgb(220 38 38)':'rgb(74 222 128)')" x-text="text"
-              @mouseover="text=(status=='open'?'close':'reopen')" @mouseleave="text=status"
-              @click="status=(status=='open'?'done':'open'); fetch('/setStatus/'+'{{.Report.AdministratorToken}}', {method:'POST', body: JSON.stringify({status: status})})"></span>
-    </div>
-    {{end}}
-    <hr>
-    {{$admin := .IsAdministrator}}
-    {{range .Report.Messages}}
-        <div class="chat {{if eq .IsAdmin $admin}}chat-end{{else}}chat-start{{end}}">
-            <div class="chat-bubble">
-                <span style="font-weight: bold; color:#3070b3">
-                    {{.CreatedAt.Format "02.01.2006 15:04"}}
-                </span>
-                <p>
-                    {{.GetBody}}
-                </p>
-            </div>
+    <h1 class="font-semibold text-xl text-gray-700">{{.Tr.T .Lang "report"}} {{.Report.DateFmt}}</h1>
+    {{range $i, $m := .Report.Messages}}
+        <!--<div class="bg-white rounded shadow m-5 p-4 ml-9 mr-9">-->
+        <div class="shadow rounded my-5 p-4{{if ne $admin $m.IsAdmin}} border-l-4 border-gray-500 mr-4 pl-4{{else}} border-r-4 border-gray-500 ml-4 pr-4{{end}}">
+            {{$m.GetBody}}
         </div>
     {{end}}
-    <hr>
-    <form class="row" method="post">
-        <label class="12 columns">
+    <form method="post">
+        <label class="w-full mb-2">
             Reply
-            <textarea name="reply" class="12 columns"></textarea>
+            <textarea name="reply" class="w-full"></textarea>
         </label>
         <input type="submit" value="Absenden">
     </form>
 </div>
+
+{{template "footer" .}}
+
 </body>
 </html>

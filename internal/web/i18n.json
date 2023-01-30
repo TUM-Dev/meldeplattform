@@ -22,5 +22,9 @@
   "select_topic_prompt": {
     "de": "Bitte wählen Sie den Typ des zu meldenenden Problems aus",
     "en": "Please select the type of issue you want to report"
+  },
+  "report": {
+    "de": "Meldung",
+    "en": "Report"
   }
 }

@@ -198,16 +198,9 @@ func (a *App) submitRoute(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/report?reporterToken="+dbReport.ReporterToken)
 }
 
-type ReportPageData struct {
-	Config model.Config
-	Report *model.Report
-
-	IsAdministrator bool
-}
-
 func (a *App) reportRoute(c *gin.Context) {
-	d := ReportPageData{
-		Config: a.config,
+	d := model.ReportPage{
+		Base:   c.MustGet("base").(model.Base),
 		Report: &model.Report{},
 	}
 

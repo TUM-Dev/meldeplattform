@@ -15,3 +15,9 @@ type Index struct {
 	Topics []Topic
 	Topic  *int
 }
+
+type ReportPage struct {
+	Base
+	Report          *Report
+	IsAdministrator bool
+}
