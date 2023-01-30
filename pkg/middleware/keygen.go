@@ -1,4 +1,4 @@
-package saml
+package middleware
 
 import (
 	"bytes"

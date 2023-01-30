@@ -8,6 +8,11 @@ type Base struct {
 	Lang   string
 	Config Config
 	Tr     i18n.I18n
+
+	LoggedIn bool
+	Name     string
+	Email    string
+	UID      string
 }
 
 type Index struct {

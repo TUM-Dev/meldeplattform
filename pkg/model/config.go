@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
-	"github.com/TUM-Dev/meldeplattform/pkg/saml"
 	"html/template"
 )
 
@@ -20,9 +19,13 @@ type Config struct {
 		Cert string `yaml:"cert"`
 		Key  string `yaml:"key"`
 	} `yaml:"https"`
-	FileDir string          `yaml:"fileDir"`
-	URL     string          `yaml:"URL"`
-	Saml    saml.SamlConfig `yaml:"saml"`
+	FileDir string `yaml:"fileDir"`
+	URL     string `yaml:"URL"`
+	Saml    struct {
+		IdpMetadataURL string `yaml:"idpMetadataURL"`
+		EntityID       string `yaml:"entityID"`
+		RootURL        string `yaml:"rootURL"`
+	} `yaml:"saml"`
 }
 
 type Topic struct {

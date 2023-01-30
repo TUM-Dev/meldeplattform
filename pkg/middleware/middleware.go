@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"strings"
 
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
@@ -46,9 +48,26 @@ func InitTemplateBase(tr i18n.I18n, config model.Config) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		lang := c.GetString("lang")
 		base := model.Base{
-			Lang:   lang,
-			Tr:     tr,
-			Config: config,
+			Lang:     lang,
+			Tr:       tr,
+			Config:   config,
+			LoggedIn: false,
+		}
+		cookie, err := c.Cookie("jwt")
+		if err == nil {
+			token, err := jwt.ParseWithClaims(cookie, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+				return keys.Leaf.PublicKey, nil
+			})
+			if err != nil {
+				fmt.Println("JWT parsing error: ", err)
+				c.SetCookie("jwt", "", -1, "/", "", false, true)
+				return
+			} else {
+				base.LoggedIn = true
+				base.Name = token.Claims.(*TokenClaims).Name
+				base.Email = token.Claims.(*TokenClaims).Mail
+				base.UID = token.Claims.(*TokenClaims).UID
+			}
 		}
 		c.Set("base", base)
 	}

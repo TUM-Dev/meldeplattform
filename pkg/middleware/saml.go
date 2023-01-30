@@ -1,4 +1,4 @@
-package saml
+package middleware
 
 import (
 	"context"
@@ -9,9 +9,13 @@ import (
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"net/http"
 	"net/url"
+	"time"
 )
+
+var keys tls.Certificate
 
 type SamlConfig struct {
 	IdpMetadataURL string `yaml:"idpMetadataURL"`
@@ -31,7 +35,8 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 		fmt.Println("Could not load SAML keypair", err)
 		return
 	}
-	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
+	keys = keyPair
+	keys.Leaf, err = x509.ParseCertificate(keys.Certificate[0])
 	if err != nil {
 		fmt.Println("Could not parse SAML keypair", err)
 		return
@@ -56,8 +61,8 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 
 	samlSP, err := samlsp.New(samlsp.Options{
 		URL:               *rootURL,
-		Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:       keyPair.Leaf,
+		Key:               keys.PrivateKey.(*rsa.PrivateKey),
+		Certificate:       keys.Leaf,
 		IDPMetadata:       idpMetadata,
 		EntityID:          c.EntityID,
 		AllowIDPInitiated: true,
@@ -112,9 +117,35 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 			return
 		}
 
-		lrzID := extractSamlField(response, "uid")
-		fmt.Println("LRZ ID: ", lrzID)
+		uid := extractSamlField(response, "uid")
+		name := extractSamlField(response, "displayName")
+		mail := extractSamlField(response, "mail")
+		t := jwt.New(jwt.GetSigningMethod("RS256"))
+
+		t.Claims = &TokenClaims{
+			RegisteredClaims: &jwt.RegisteredClaims{
+				ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
+			},
+			Name: name,
+			Mail: mail,
+			UID:  uid,
+		}
+		signedString, err := t.SignedString(keys.PrivateKey.(*rsa.PrivateKey))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.SetCookie("jwt", signedString, 60*60*24*7, "/", "", false, true)
+		c.Redirect(http.StatusFound, "/")
 	})
+}
+
+type TokenClaims struct {
+	*jwt.RegisteredClaims
+
+	UID  string `json:"UID"`
+	Name string `json:"name"`
+	Mail string `json:"mail"`
 }
 
 // extractSamlField gets the value of the given field from the SAML response or an empty string if the field is not present.

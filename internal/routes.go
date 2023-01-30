@@ -3,7 +3,6 @@ package internal
 import (
 	"github.com/TUM-Dev/meldeplattform/pkg/middleware"
 	"github.com/TUM-Dev/meldeplattform/pkg/model"
-	"github.com/TUM-Dev/meldeplattform/pkg/saml"
 	"github.com/gin-gonic/gin"
 
 	"embed"
@@ -41,9 +40,10 @@ func (a *App) initRoutes() {
 	}
 	a.template = template.Must(template.New("base").Funcs(funcs).ParseFS(templates, "web/templates/*.gohtml"))
 
+	middleware.ConfigSaml(a.engine, a.config.Saml)
+
 	a.engine.Use(middleware.InitI18n)
 	a.engine.Use(middleware.InitTemplateBase(a.i18n, a.config))
-	saml.ConfigSaml(a.engine, a.config.Saml)
 
 	a.engine.GET("/", a.indexRoute)
 	a.engine.GET("/setLang", a.setLang)
