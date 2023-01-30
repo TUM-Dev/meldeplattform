@@ -133,3 +133,10 @@ content:
 # uploads are saved here:
 fileDir: files
 URL: http://localhost:8080
+
+saml:
+  idpMetadataURL: https://login.tum.de/idp/shibboleth
+  #cert: /path/to/fullchain.pem
+  #privkey: /path/to/privkey.pem
+  entityID: https://meldeplattform.tum.de/shib
+  rootURL: https://meldeplattform.tum.de/shib

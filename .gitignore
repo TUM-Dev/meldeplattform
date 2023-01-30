@@ -1,2 +1,4 @@
 .idea
 database.db
+cert.pem
+key.pem
