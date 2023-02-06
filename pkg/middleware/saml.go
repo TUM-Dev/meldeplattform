@@ -21,10 +21,19 @@ type SamlConfig struct {
 	IdpMetadataURL string `yaml:"idpMetadataURL"`
 	EntityID       string `yaml:"entityID"`
 	RootURL        string `yaml:"rootURL"`
+	Cert           struct {
+		Org           string `yaml:"org"`
+		Country       string `yaml:"country"`
+		Province      string `yaml:"province"`
+		Locality      string `yaml:"locality"`
+		StreetAddress string `yaml:"streetAddress"`
+		PostalCode    string `yaml:"postalCode"`
+		Cn            string `yaml:"cn"`
+	} `yaml:"cert"`
 }
 
 func ConfigSaml(r *gin.Engine, c SamlConfig) {
-	err := generateKey()
+	err := generateKey(c.Cert.Org, c.Cert.Country, c.Cert.Province, c.Cert.Locality, c.Cert.StreetAddress, c.Cert.PostalCode, c.Cert.Cn)
 	if err != nil {
 		fmt.Println("Skipping saml due to cert error:", err)
 		return

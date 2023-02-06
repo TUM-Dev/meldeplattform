@@ -25,6 +25,15 @@ type Config struct {
 		IdpMetadataURL string `yaml:"idpMetadataURL"`
 		EntityID       string `yaml:"entityID"`
 		RootURL        string `yaml:"rootURL"`
+		Cert           struct {
+			Org           string `yaml:"org"`
+			Country       string `yaml:"country"`
+			Province      string `yaml:"province"`
+			Locality      string `yaml:"locality"`
+			StreetAddress string `yaml:"streetAddress"`
+			PostalCode    string `yaml:"postalCode"`
+			Cn            string `yaml:"cn"`
+		} `yaml:"cert"`
 	} `yaml:"saml"`
 }
 

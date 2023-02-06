@@ -140,3 +140,11 @@ saml:
   #privkey: /path/to/privkey.pem
   entityID: https://meldeplattform.tum.de/shib
   rootURL: https://meldeplattform.tum.de/shib
+  cert:
+    org: "TUM"
+    country: "DE"
+    province: "BY"
+    locality: "Munich"
+    streetAddress: "Arcisstr. 21"
+    postalCode: "80333"
+    cn: "meldeplattform.tum.de"

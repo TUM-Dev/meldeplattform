@@ -14,19 +14,20 @@ import (
 )
 
 // generateKey generates a new RSA keypair if none exists and writes it to the disk in PEM format.
-func generateKey() error {
+func generateKey(org, country, province, locality, streetAddress, postalCode, cn string) error {
 	if _, err := os.Stat("files/cert.pem"); !errors.Is(err, os.ErrNotExist) {
 		return nil // cert already exists
 	}
 	ca := &x509.Certificate{
 		SerialNumber: big.NewInt(2019),
 		Subject: pkix.Name{
-			Organization:  []string{"Meldeplattform"},
-			Country:       []string{"DE"},
-			Province:      []string{"BY"},
-			Locality:      []string{"Munich"},
-			StreetAddress: []string{"Arcisstraße 21"},
-			PostalCode:    []string{"80333"},
+			Organization:  []string{org},
+			Country:       []string{country},
+			Province:      []string{province},
+			Locality:      []string{locality},
+			StreetAddress: []string{streetAddress},
+			PostalCode:    []string{postalCode},
+			CommonName:    cn,
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(2, 0, 0),
