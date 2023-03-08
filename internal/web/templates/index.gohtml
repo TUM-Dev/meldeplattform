@@ -8,16 +8,28 @@
 <body class="bg-gray-50">
 {{template "header" .}}
 {{$lang := .Lang}}
+{{$uid := .Base.UID}}
+{{$admin := .Base.IsAdmin}}
+{{$t := .Tr}}
 <div class="container">
     <p>{{if eq .Topic nil}}{{.Tr.T $lang "select_topic_prompt"}}{{end}}</p>
         {{if ne .Topic nil}}
             {{template "form" .}}
         {{else}}
-            {{range $id, $c := .Config.Content.Topics }}
+            {{range $id, $c := .Base.Topics }}
                 <div class="my-2">
-                    <a style="margin: 0; font-weight: bold" href="/form/{{$id}}">{{$c.Name.Tr $lang}}</a><br>
+                    <a style="margin: 0; font-weight: bold" href="/form/{{$c.ID}}">{{$c.Name.Tr $lang}}</a><br>
                     <p style="margin-top: 0">{{$c.Summary.Tr $lang}}</p>
+                    {{if or ($c.IsAdmin $uid) $admin}}
+                        <a class="button button-small" href="/newTopic/{{$c.ID}}">{{$t.T $lang "edit"}}</a>
+                        <a class="button button-small" href="/reports/{{$c.ID}}">{{$t.T $lang "reports"}}</a>
+                    {{end}}
                 </div>
+            {{end}}
+            {{if .Base.IsAdmin}}
+                <a class="button" href="/newTopic/0">
+                    {{.Tr.T $lang "create_topic"}}
+                </a>
             {{end}}
         {{end}}
 </div>

@@ -2,8 +2,8 @@ package internal
 
 import (
 	"fmt"
-	"github.com/glebarez/sqlite"
 	"github.com/TUM-Dev/meldeplattform/pkg/model"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +17,9 @@ func (a *App) initDB() error {
 		&model.Message{},
 		&model.Report{},
 		&model.File{},
+		&model.Topic{},
+		&model.Field{},
+		&model.Admin{},
 	)
 	if err != nil {
 		return fmt.Errorf("migrate db: %w", err)

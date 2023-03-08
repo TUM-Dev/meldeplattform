@@ -3,6 +3,9 @@ package middleware
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"net/http"
 	"strings"
 
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
@@ -44,7 +47,7 @@ func InitI18n(c *gin.Context) {
 	}
 }
 
-func InitTemplateBase(tr i18n.I18n, config model.Config) func(c *gin.Context) {
+func InitTemplateBase(tr i18n.I18n, config model.Config, db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		lang := c.GetString("lang")
 		base := model.Base{
@@ -53,6 +56,7 @@ func InitTemplateBase(tr i18n.I18n, config model.Config) func(c *gin.Context) {
 			Config:   config,
 			LoggedIn: false,
 		}
+		db.Preload(clause.Associations).Find(&base.Topics)
 		cookie, err := c.Cookie("jwt")
 		if err == nil {
 			token, err := jwt.ParseWithClaims(cookie, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -67,8 +71,44 @@ func InitTemplateBase(tr i18n.I18n, config model.Config) func(c *gin.Context) {
 				base.Name = token.Claims.(*TokenClaims).Name
 				base.Email = token.Claims.(*TokenClaims).Mail
 				base.UID = token.Claims.(*TokenClaims).UID
+				for _, user := range config.Content.AdminUsers {
+					if user == base.UID {
+						base.IsAdmin = true
+						break
+					}
+				}
 			}
 		}
 		c.Set("base", base)
+	}
+}
+
+func AuthAdmin() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		base := c.MustGet("base").(model.Base)
+		if !base.IsAdmin {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+	}
+}
+
+func AuthAdminOfTopic(db *gorm.DB) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		base := c.MustGet("base").(model.Base)
+		if !base.IsAdmin {
+			topicID := c.Param("topicID")
+			var topic model.Topic
+			db.Preload(clause.Associations).First(&topic, topicID)
+			isAdmin := false
+			for _, admin := range topic.Admins {
+				if admin.UserID == base.UID {
+					isAdmin = true
+					break
+				}
+			}
+			if !isAdmin {
+				c.AbortWithStatus(http.StatusUnauthorized)
+			}
+		}
 	}
 }

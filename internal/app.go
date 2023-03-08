@@ -31,16 +31,12 @@ func NewApp() *App {
 		panic(err)
 	}
 	a.i18n = i
-	return a
-}
-
-func (a *App) Run() error {
 	a.engine.Use(gin.Logger(), gin.Recovery())
 	_ = a.engine.SetTrustedProxies(nil)
 
-	err := a.initCfg()
+	err = a.initCfg()
 	if err != nil {
-		return fmt.Errorf("init config: %v", err)
+		panic(fmt.Errorf("init config: %v", err))
 	}
 	if a.config.Mode == "prod" {
 		// strip clientip from requests:
@@ -50,9 +46,13 @@ func (a *App) Run() error {
 	}
 	err = a.initDB()
 	if err != nil {
-		return fmt.Errorf("initDB: %w", err)
+		panic(fmt.Errorf("initDB: %w", err))
 	}
 	a.initRoutes()
+	return a
+}
+
+func (a *App) Run() error {
 	return a.engine.Run()
 }
 

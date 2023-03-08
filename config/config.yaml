@@ -21,114 +21,8 @@ content:
     <svg xmlns:svg="http://www.w3.org/2000/svg" width="100px" xmlns="http://www.w3.org/2000/svg" viewBox="-16.014 -31 408.16 212.46684" enable-background="new -16.014 -31 149 114" xml:space="preserve" sodipodi:docname="TUM_Web_Logo_blau.svg" inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"><metadata id="metadata13"><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/><dc:title>TUM_Web_Logo_blau</dc:title></cc:Work></rdf:RDF></metadata><defs id="defs11"/><sodipodi:namedview pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" objecttolerance="10" gridtolerance="10" guidetolerance="10" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-width="1920" inkscape:window-height="986" id="namedview9" showgrid="false" fit-margin-top="0" fit-margin-left="0" fit-margin-right="0" fit-margin-bottom="0" inkscape:zoom="1.754386" inkscape:cx="124.61021" inkscape:cy="115.2546" inkscape:window-x="-11" inkscape:window-y="-11" inkscape:window-maximized="1" inkscape:current-layer="Ebene_1"/>
     <path fill="#3070b3" d="m 140.54052,-31 v 173.32822 h 44.72985 V -31 H 392.146 V 181.46685 H 353.00738 V 8.138629 H 308.2775 V 181.46685 H 269.13887 V 8.138629 H 224.40902 V 181.46685 H 101.4019 V 8.138629 H 62.26327 V 181.46685 H 23.12462 V 8.138629 H -16.014 V -31 Z" id="path6" style="stroke-width:5.59123"/>
     </svg>
-  topics:
-    - name:
-        en: IT Security
-        de: IT Sicherheit
-      summary:
-        en: Here you can post anonymous reports about security issues you found in IT systems at the Technical University of Munich
-        de: Hier können Sie anonyme Meldungen zu Sicherheitsproblemen in IT-Systemen der Technischen Universität München einreichen
-      fields:
-        - name:
-            en: Email (optional)
-            de: Email (optional)
-          description:
-            en: In case you want us to be able to contact you via mail for further questions.
-            de: Falls Sie über Rückmeldungen unsererseite per Mail informiert werden möchten.
-          required: false
-          type: email
-        - name:
-            en: What type of security risk did you encounter?
-            de: Welche Art von Sicherheitsrisiko haben Sie gefunden?
-          description:
-            en: e.g., a potential vulnerability in a system or application, suspicious activity on a network, unauthorized access to sensitive data
-            de: z.B. eine potentielle Schwachstelle in einem System oder einer Anwendung, verdächtige Aktivitäten im Netzwerk, unerlaubter Zugriff auf sensible Daten
-          required: true
-          type: textarea
-        - name:
-            en: Where did you encounter the security risk?
-            de: Wo haben Sie das Sicherheitsrisiko gefunden?
-          description:
-            en: e.g., the name of the system or application, the location or department where the risk was observed
-            de: z.B. der Name des Systems oder der Anwendung, der Ort oder die Abteilung, in der das Risiko beobachtet wurde
-          required: true
-          type: textarea
-        - name:
-            en: When did you encounter the security risk?
-            de: Wann haben Sie das Sicherheitsrisiko gefunden?
-          description:
-            en: e.g., the date and time when the risk was discovered
-            de: z.B. das Datum und die Uhrzeit, zu der das Risiko entdeckt wurde
-          required: true
-          type: text
-        - name:
-            en: What is the impact of the security risk?
-            de: Welchen folgen kann das Sicherheitsrisiko haben?
-          description:
-            en: e.g., the potential consequences if the risk was not addressed, such as data loss or a security breach
-            de: z.B. die möglichen Folgen, wenn das Risiko nicht behoben wird, wie z.B. Datenverlust oder veröffentlichung von sensiblen Daten
-          required: true
-          type: textarea
-        - name:
-            en: (How) did you respond to the security risk?
-            de: (Wie) haben Sie auf das Sicherheitsrisiko reagiert?
-          description:
-            en: e.g., the actions you took to address the risk, such as reporting it to IT or stopping the activity
-            de: z.B. die Maßnahmen, die Sie ergriffen haben, um das Risiko zu beheben, wie z.B. das Melden an die IT oder das Stoppen der Aktivität
-          required: true
-          type: textarea
-        - name:
-            en: Files (optional)
-            de: Dateien (optional)
-          description:
-            en: Please attach files that seem relevant to you and help us identifying the issue or affected system/s. Be careful to remove metadata as necessary.
-            de: Bitte fügen Sie Dateien an, die für Sie relevant erscheinen und uns bei der Identifizierung des Problems oder der betroffenen Systeme helfen. Entfernen Sie Details, wenn nötig.
-          required: false
-          type: file
-      contacts:
-        email:
-          relay: mailrelay.tum.de
-          sender: meldung@security.tum.de
-          target: meldung@security.tum.de
-        # send a matrix message to a room https://matrix.org/docs/guides/client-server-api#login
-        matrix:
-          accessToken: "demo"
-          roomID: "!room123:matrix.org"
-          homeServer: "matrix.org"
-        # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
-        webhook:
-          target: https://webhook.url/myhook
-    - name:
-        en: Compliance
-        de: Compliance
-      summary:
-        en: Here you can post anonymous reports about any compliance issues you are concerned about at the Technical University of Munich
-        de: Hier können Sie anonyme Meldungen über alle Compliance-Probleme einreichen, die Sie an der Technischen Universität München betreffen
-      fields:
-        - name:
-            en: Email
-            de: Email
-          description:
-            en: In case you want us to be able to contact you via mail for further questions.
-            de: Falls Sie über Rückmeldungen unsererseite per Mail informiert werden möchten.
-          required: true
-          type: email
-        - name:
-            en: What type of compliance issue did you encounter?
-            de: Welche Art von Compliance-Problemen haben Sie gefunden?
-          description:
-            en: e.g., ...
-            de: e.g., ...
-          required: true
-          type: textarea
-      contacts:
-        email:
-          relay: mailrelay.tum.de
-          sender: meldung@security.tum.de
-          target: meldung@security.tum.de
-        # message will be sent here as json (e.G. {"message": "hi there, I found this bug: xyz"}) via http POST
-        # webhook:
-        #   target: https://webhook.url/myhook
+  adminUsers:
+    - "ge42tum"
 
 # uploads are saved here:
 fileDir: files
@@ -148,3 +42,11 @@ saml:
     streetAddress: "Arcisstr. 21"
     postalCode: "80333"
     cn: "meldeplattform.tum.de"
+
+mail:
+  user: "ge42tum"
+  password: "abc123"
+  smtpServer: "smtp.tum.de"
+  smtpPort: "587"
+  from: "meldeplattform@tum.de"
+  fromName: "Meldeplattform TUM"

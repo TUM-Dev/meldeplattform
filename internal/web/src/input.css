@@ -136,3 +136,18 @@ input[type="button"].button-primary:focus {
     color: #FFF;
     background-color: #1EAEDB;
     border-color: #1EAEDB; }
+
+.button-small {
+    height: 20px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    line-height: 20px !important;
+}
+
+thead tr td {
+    @apply border-b font-semibold p-4 pl-8 pt-0 pb-3 text-slate-500 text-left;
+}
+
+tbody tr td {
+    @apply border-b border-slate-100 p-4 pl-8 text-slate-500;
+}

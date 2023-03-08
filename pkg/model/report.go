@@ -15,11 +15,13 @@ type ReportState string
 const (
 	ReportStateOpen ReportState = "open"
 	ReportStateDone ReportState = "done"
+	ReportStateSpam ReportState = "spam"
 )
 
 type Report struct {
 	ID        uint `gorm:"primarykey"`
 	CreatedAt time.Time
+	TopicID   uint
 
 	ReporterToken      string `gorm:"type:varchar(255);not null"`
 	AdministratorToken string `gorm:"type:varchar(255);not null"`
@@ -28,7 +30,15 @@ type Report struct {
 
 	State ReportState
 
-	Creator *string `gorm:"type:varchar(512)"`
+	Creator *string `gorm:"type:varchar(512)"` // optional email address
+}
+
+func (r *Report) IsClosed() bool {
+	return r.State == ReportStateDone
+}
+
+func (r *Report) IsSpam() bool {
+	return r.State == ReportStateSpam
 }
 
 func (r *Report) GetStatusColor() template.CSS {
@@ -48,6 +58,8 @@ func (r *Report) GetStatusText() string {
 		return "Open"
 	case ReportStateDone:
 		return "Done"
+	case ReportStateSpam:
+		return "Spam"
 	default:
 		return "Unknown"
 	}

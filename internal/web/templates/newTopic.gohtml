@@ -1,0 +1,129 @@
+<html lang="{{.Lang}}">
+<head>
+    <title>{{.Config.Content.Title.Tr .Lang}}</title>
+    <link rel="stylesheet" href="/static/web/dist/main.css">
+    <script src="/static/web/dist/alpine.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body class="bg-gray-50">
+{{template "header" .}}
+<div class="container">
+
+    <p class="mb-4">{{.Tr.T .Lang "create_topic_summary"}}</p>
+    <form class="mb-14"
+          @submit.prevent="fetch('/api/topic/'+topic.ID, {method:'POST', body: JSON.stringify(topic)})"
+          x-data="{ topic: undefined, id: window.location.href.substring(window.location.href.lastIndexOf('/') + 1) }"
+          x-init="fetch('/api/topic/'+(id!==undefined?id:0)).then(r=>r.json()).then((r)=>topic=r)">
+        <template x-if="topic !== undefined">
+            <div>
+                <h3 class="text-xl font-semibold">{{.Tr.T .Lang "general"}}</h3>
+                <h4 class="text-lg mb-2 font-medium">Name:</h4>
+                <label class="ml-2">
+                    <span>{{.Tr.T .Lang "german"}}</span>
+                    <input required class="w-full" type="text" x-model="topic.Name.de" placeholder="IT-Sicherheit">
+                </label>
+                <label class="ml-2">
+                    <span>{{.Tr.T .Lang "english"}}</span>
+                    <input required class="w-full" type="text" x-model="topic.Name.en" placeholder="IT-Security">
+                </label>
+
+                <h4 class="text-lg mb-2 font-medium mt-4">{{.Tr.T .Lang "summary"}}:</h4>
+                <label class="ml-2">
+                    <span>{{.Tr.T .Lang "german"}}</span>
+                    <input required class="w-full" type="text" x-model="topic.Summary.de"
+                           placeholder="Alle Probleme die die Sicherheit von IT Systemen an der TUM betreffen.">
+                </label>
+                <label class="ml-2">
+                    <span>{{.Tr.T .Lang "english"}}</span>
+                    <input required class="w-full" type="text" x-model="topic.Summary.en"
+                           placeholder="Issues regarding the security of IT Systems at TUM.">
+                </label>
+
+                <hr class="my-4">
+
+                <h3 class="text-xl font-semibold">{{.Tr.T .Lang "questions"}}</h3>
+                <template x-for="(field, i) in topic.Fields">
+                    <div class="w-full rounded bg-white p-4 my-2 shadow">
+                        <label class="mb-2">
+                            <span>{{.Tr.T .Lang "type"}}</span>
+                            <select class="w-full" x-model="field.Type">
+                                <option value="text">Text</option>
+                                <option value="textarea">Textarea</option>
+                                <option value="file">File</option>
+                                <option value="files">Files</option>
+                            </select>
+                        </label>
+                        Name:
+                        <label class="mb-2">
+                            <label class="ml-2">
+                                <span>{{.Tr.T .Lang "german"}}</span>
+                                <input required class="w-full" type="text" x-model="field.Name.de"
+                                       placeholder="Wie sind Sie auf das Problem aufmerksam geworden?">
+                            </label>
+                            <label class="ml-2">
+                                <span>{{.Tr.T .Lang "english"}}</span>
+                                <input required class="w-full" type="text" x-model="field.Name.en"
+                                    placeholder="How did you encounter the issue?">
+                            </label>
+                        </label>
+
+                        {{.Tr.T .Lang "description"}}:
+                        <label>
+                            <label class="ml-2">
+                                <span>{{.Tr.T .Lang "german"}}</span>
+                                <input required class="w-full" type="text" x-model="field.Description.de"
+                                       placeholder="z.B. Beim surfen bin ich auf einen Login aufmerksam geworden der leere Eingaben akzeptiert.">
+                            </label>
+                            <label class="ml-2">
+                                <span>{{.Tr.T .Lang "english"}}</span>
+                                <input required class="w-full" type="text" x-model="field.Description.en"
+                                       placeholder="e.g. I came across a login form that accepts empty inputs while surfing.">
+                            </label>
+                        </label>
+
+                        <label>
+                            <span>{{.Tr.T .Lang "required"}}</span>
+                            <input type="checkbox" x-model="field.Required">
+                        </label>
+
+                        <a class="mt-2" role="button" @click="topic.Fields.splice(i, 1)">{{.Tr.T .Lang "delete"}}</a>
+                    </div>
+                </template>
+                <button class="button mt-2" type="button"
+                        @click="if(topic.Fields==null){topic.Fields=[]};
+                        topic.Fields.push({Description:{de:'', en:''},Name:{de:'', en:''}, Type:'text',Required:false})">
+                    {{.Tr.T .Lang "add_field"}}
+                    <hr class="my-4">
+                </button>
+
+                <hr class="my-4">
+
+                <h3 class="text-xl font-semibold">{{.Tr.T .Lang "admins"}}:</h3>
+                <p class="mb-2">{{.Tr.T .Lang "admins_desc"}}</p>
+                <div>
+                    <template x-for="(admin, i) in topic.Admins">
+                        <input class="mb-2 w-full" type="text" placeholder="ge42tum" x-model="topic.Admins[i].UserID">
+                    </template>
+                    <button type="button" @click="if(topic.Admins==null){topic.Admins=[]}; topic.Admins.push({UserID:''})">
+                        {{.Tr.T .Lang "add_admin"}}
+                    </button>
+                </div>
+
+                <p class="my-2">{{.Tr.T .Lang "contactEmail"}}</p>
+                <div>
+                    <input class="mb-2 w-full" type="text" placeholder="it-sec@tum.de" x-model="topic.Email">
+                </div>
+            </div>
+        </template>
+
+        <hr class="my-4">
+
+        <button class="button button-primary" type="submit">
+            {{.Tr.T .Lang "create_topic"}}
+        </button>
+    </form>
+</div>
+{{template "footer" .}}
+</body>
+</html>

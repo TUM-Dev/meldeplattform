@@ -1,37 +1,51 @@
 {{define "form"}}
-    {{$form := (getByIndex .Config.Content.Topics .Topic)}}
+    {{$form := .Topic}}
     {{$lang := .Lang}}
     <p>
         {{$form.Summary.Tr $lang}}
     </p>
     <hr class="m-4">
     <form method="post" action="/submit" enctype="multipart/form-data" class="mb-10">
+        <input type="hidden" name="topic" value="{{$form.ID}}">
+        <div class="my-4">
+            <label>
+                <span class="w-full">{{ .Tr.T $lang "emailLabel"}}</span>
+                <input class="w-full" type="email" name="email">
+            </label>
+            <p>
+                {{ .Tr.T $lang "emailDescription"}}
+            </p>
+        </div>
         {{range $i, $field := $form.Fields}}
             <div class="my-4">
                 <label>
                     <span class="w-full">{{$field.Name.Tr $lang}}</span>
                     {{if eq $field.Type "textarea"}}
                         <textarea class="w-full" {{if $field.Required}} required{{end}}
-                                  name="{{$i}}"></textarea>
+                                  name="{{$field.ID}}"></textarea>
 
                     {{else if eq $field.Type "select"}}
                         <select class="w-full" {{if $field.Required}} required{{end}}
-                                name="{{$i}}">
+                                name="{{$field.ID}}">
                             {{range $field.Choices}}
                                 <option>{{.}}</option>
                             {{end}}
                         </select>
                     {{else if eq $field.Type "checkbox"}}
                         <input type="{{$field.Type}}"{{if $field.Required}} required{{end}}
-                               name="{{$i}}">
+                               name="{{$field.ID}}">
                     {{else if eq $field.Type "file"}}
-                        <input class="w-full" multiple
+                        <input class="w-full"
                                type="{{$field.Type}}"{{if $field.Required}} required{{end}}
-                               name="{{$i}}">
+                               name="{{$field.ID}}">
+                    {{else if eq $field.Type "files"}}
+                        <input class="w-full" multiple
+                               type="file"{{if $field.Required}} required{{end}}
+                               name="{{$field.ID}}">
                     {{else}}
                         <input class="w-full"
                                type="{{$field.Type}}"{{if $field.Required}} required{{end}}
-                               name="{{$i}}">
+                               name="{{$field.ID}}">
                     {{end}}
                 </label>
                 <p>
@@ -39,6 +53,6 @@
                 </p>
             </div>
         {{end}}
-        <input type="submit" value="Absenden">
+        <input type="submit" value="{{.Tr.T .Lang "send"}}">
     </form>
 {{end}}

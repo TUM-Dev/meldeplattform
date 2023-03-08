@@ -26,5 +26,101 @@
   "report": {
     "de": "Meldung",
     "en": "Report"
+  },
+  "create_topic": {
+    "de": "Thema erstellen",
+    "en": "Create Topic"
+  },
+  "create_topic_summary": {
+    "de": "Erstellen eines neuen Unterthemas für die Meldeplattform:",
+    "en": "Create a new subtopic for the reporting platform:"
+  },
+  "send": {
+    "de": "Absenden",
+    "en": "Send"
+  },
+  "german": {
+    "de": "Deutsch",
+    "en": "German"
+  },
+  "english": {
+    "de": "Englisch",
+    "en": "English"
+  },
+  "summary": {
+    "de": "Zusammenfassung",
+    "en": "Summary"
+  },
+  "general": {
+    "de": "Allgemein",
+    "en": "General"
+  },
+  "questions": {
+    "de": "Fragen",
+    "en": "Questions"
+  },
+  "add_field": {
+    "de": "Frage hinzufügen",
+    "en": "Add Question"
+  },
+  "type": {
+    "de": "Typ",
+    "en": "Type"
+  },
+  "description": {
+    "de": "Beschreibung",
+    "en": "Description"
+  },
+  "required": {
+    "de": "Pflichtfeld",
+    "en": "Required"
+  },
+  "delete" : {
+    "de": "löschen",
+    "en": "delete"
+  },
+  "admins" : {
+    "de": "Administrator*innen",
+    "en": "Admins"
+  },
+  "admins_desc" : {
+    "de": "Können dieses Thema bearbeiten, Meldungen sehen, beantworten und weitere Administrator*innen hinzufügen.",
+    "en": "Can edit this topic, see and reply to reports and add other admins."
+  },
+  "add_admin": {
+    "de": "Admin hinzufügen",
+    "en": "Add Admin"
+  },
+  "edit": {
+    "de": "bearbeiten",
+    "en": "edit"
+  },
+  "reports": {
+    "de": "Meldungen",
+    "en": "Reports"
+  },
+  "hide_closed": {
+    "de": "Geschlossene Meldungen verstecken",
+    "en": "Hide Closed Reports"
+  },
+  "hide_spam": {
+    "de": "Spam Verstecken",
+    "en": "Hide Spam"
+  },
+  "emailLabel":{
+    "de": "E-Mail (optional)",
+    "en": "E-Mail (optional)"
+  },
+  "emailDescription": {
+    "de": "Falls sie über updates zu dieser Meldung informiert werden möchten, geben sie bitte ihre E-Mail Adresse an.",
+    "en": "If you want to be informed about updates to this report, please enter your E-Mail address."
+  },
+  "reportOpened": {
+    "de": "Ihre Meldung wurde erfolgreich abgesendet. Bitte speichern Sie sich den Link zu dieser Seite und kommen Sie gelegentlich zurück um Updates und weitere Fragen zu sehen.",
+    "en": "Your report was submitted successfully. Please save the link of this page somewhere secure and come back occasionally for updates and further questions."
+  },
+  "contactEmail": {
+    "de": "Kontakt E-Mail (für benachrichtigungen)",
+    "en": "Contact E-Mail (for notifications)"
   }
 }

@@ -8,21 +8,32 @@ type Base struct {
 	Lang   string
 	Config Config
 	Tr     i18n.I18n
+	Topics []Topic
 
 	LoggedIn bool
 	Name     string
 	Email    string
 	UID      string
+	IsAdmin  bool
 }
 
 type Index struct {
 	Base
-	Topics []Topic
-	Topic  *int
+	Topic *Topic
+}
+
+type NewTopicPage struct {
+	Base
 }
 
 type ReportPage struct {
 	Base
 	Report          *Report
 	IsAdministrator bool
+}
+
+type ReportsOfTopicPage struct {
+	Base
+	Topic   *Topic
+	Reports []Report
 }

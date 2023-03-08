@@ -1,0 +1,55 @@
+<html lang="{{.Lang}}">
+<head>
+    <title>{{.Config.Content.Title.Tr .Lang}} | Topic</title>
+    <link rel="stylesheet" href="/static/web/dist/main.css">
+    <script defer src="/static/web/dist/alpine.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body class="bg-gray-50">
+{{template "header" .}}
+<div class="container" x-data="{ hideClosed: true, hideSpam: true }">
+    <h1 class="font-semibold text-xl text-gray-700 mb-4">{{.Tr.T .Lang "reports"}}: {{.Topic.Name.Tr .Lang}}</h1>
+    {{- /*gotype: github.com/TUM-Dev/meldeplattform/pkg/model.ReportsOfTopicPage*/ -}}
+    <label class="text-sm font-medium">
+        <input type="checkbox" x-model="hideClosed">
+        {{.Tr.T .Lang "hide_closed"}}
+    </label>
+    <label class="text-sm font-medium mb-4">
+        <input type="checkbox" x-model="hideSpam">
+        {{.Tr.T .Lang "hide_spam"}}
+    </label>
+
+    <table class="table-auto w-full">
+        <thead>
+        <tr>
+            <td>ID</td>
+            <td>Date</td>
+            <td>Title</td>
+            <td>Contact</td>
+            <td>Status</td>
+            <td>Messages</td>
+            <td></td>
+        </tr>
+        </thead>
+        <tbody>
+        {{- range .Reports}}
+            <tr x-show="! (hideClosed && {{.IsClosed}} || hideSpam && {{.IsSpam}})">
+                <td>#{{.ID}}</td>
+                <td>{{.CreatedAt.Format "02.01.2006 15:04"}}</td>
+                <td>{{.CreatedAt.Format "02.01.2006 15:04"}}</td>
+                <td>{{if .Creator}}{{.Creator}}{{else}}Anonymous{{end}}</td>
+                <td style="color: {{.GetStatusColor}}">{{.GetStatusText}}</td>
+                <td>{{len .Messages}}</td>
+                <td><a class="button button-small" href="/report?administratorToken={{.AdministratorToken}}">Open</a> </td>
+            </tr>
+        {{- end}}
+        </tbody>
+    </table>
+
+</div>
+
+{{template "footer" .}}
+
+</body>
+</html>
