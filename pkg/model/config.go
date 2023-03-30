@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
+	"github.com/russross/blackfriday/v2"
 	"html/template"
 )
 
@@ -43,6 +44,20 @@ type Config struct {
 		From       string `yaml:"from"`
 		FromName   string `yaml:"fromName"`
 	} `yaml:"mail"`
+	Imprint string `yaml:"imprint"`
+	Privacy string `yaml:"privacy"`
+}
+
+func (c Config) GetPrivacy() template.HTML {
+	return c.toHtml(c.Privacy)
+}
+
+func (c Config) GetImprint() template.HTML {
+	return c.toHtml(c.Imprint)
+}
+
+func (c Config) toHtml(s string) template.HTML {
+	return template.HTML(blackfriday.Run([]byte(s), blackfriday.WithExtensions(blackfriday.CommonExtensions)))
 }
 
 func (c Config) GetLogo() template.HTML {

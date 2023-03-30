@@ -149,5 +149,29 @@ thead tr td {
 }
 
 tbody tr td {
-    @apply border-b border-slate-100 p-4 pl-8 text-slate-500;
+    @apply border-b border-slate-100 p-4 pl-8 text-slate-700;
+}
+
+.info hr {
+    @apply my-2;
+}
+
+.info h1 {
+    @apply text-2xl font-bold text-slate-700 mt-4;
+}
+
+.info h2 {
+    @apply text-xl font-bold text-slate-700 mt-2;
+}
+
+.info h3 {
+    @apply text-lg font-bold text-slate-700 mt-2
+}
+
+.info h4 {
+    @apply text-base font-bold text-slate-700 mt-2;
+}
+
+.info ul {
+    @apply list-disc list-inside;
 }

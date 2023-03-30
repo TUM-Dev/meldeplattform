@@ -47,6 +47,8 @@ func (a *App) initRoutes() {
 	a.engine.Use(middleware.InitTemplateBase(a.i18n, a.config, a.db))
 
 	a.engine.GET("/", a.indexRoute)
+	a.engine.GET("/imprint", a.infoRoute("imprint"))
+	a.engine.GET("/privacy", a.infoRoute("privacy"))
 	a.engine.GET("/setLang", a.setLang)
 	a.engine.GET("/form/:topicID", a.formRoute)
 	a.engine.POST("/submit", a.submitRoute)
@@ -67,6 +69,26 @@ func (a *App) initRoutes() {
 	adminOfTopicRoutes.GET("", a.getTopic)
 	adminOfTopicRoutes.POST("", a.upsertTopic)
 
+}
+
+func (a *App) infoRoute(page string) func(c *gin.Context) {
+	var content template.HTML
+	switch page {
+	case "imprint":
+		content = a.config.GetImprint()
+	case "privacy":
+		content = a.config.GetPrivacy()
+	}
+
+	return func(c *gin.Context) {
+		err := a.template.ExecuteTemplate(c.Writer, "info.gohtml", model.InfoPage{
+			Base:    c.MustGet("base").(model.Base),
+			Content: content,
+		})
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 }
 
 func (a *App) setStatus(c *gin.Context) {

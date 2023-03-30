@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
+	"html/template"
 )
 
 type Base struct {
@@ -15,6 +16,11 @@ type Base struct {
 	Email    string
 	UID      string
 	IsAdmin  bool
+}
+
+type InfoPage struct {
+	Base
+	Content template.HTML
 }
 
 type Index struct {

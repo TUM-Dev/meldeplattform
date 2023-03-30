@@ -1,0 +1,18 @@
+<html lang="{{.Lang}}">
+<head>
+    <title>{{.Config.Content.Title.Tr .Lang}}</title>
+    <link rel="stylesheet" href="/static/web/dist/main.css">
+    <script src="/static/web/dist/alpine.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body class="bg-gray-50">
+{{template "header" .}}
+<div class="container">
+    <div class="mb-8 info">
+        {{.Content}}
+    </div>
+</div>
+{{template "footer" .}}
+</body>
+</html>
