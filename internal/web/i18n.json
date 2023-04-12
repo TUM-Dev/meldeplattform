@@ -28,8 +28,8 @@
     "en": "Report"
   },
   "create_topic": {
-    "de": "Thema erstellen",
-    "en": "Create Topic"
+    "de": "Thema erstellen / updaten",
+    "en": "Create/Update Topic"
   },
   "create_topic_summary": {
     "de": "Erstellen eines neuen Unterthemas für die Meldeplattform:",

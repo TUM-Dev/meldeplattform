@@ -395,6 +395,10 @@ func (a *App) upsertTopic(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
+	if err := a.db.Save(&r.Fields).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		return
+	}
 }
 
 func (a *App) reportsOfTopicRoute(c *gin.Context) {
