@@ -104,13 +104,14 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": "Invalid logout data: " + err.Error()})
 			return
 		}
-		c.SetCookie("jwt", "", -1, "/", "", false, true)
+		c.SetCookie("jwt", "", -1, "/", "", true, true)
 		c.Redirect(http.StatusFound, "/")
 	})
 
 	// /saml/logout redirects to the idp with a logout request.
 	// The idp will redirect back to /saml/slo after the user logged out.
 	r.GET("/saml/logout", func(c *gin.Context) {
+		c.SetCookie("jwt", "", -1, "/", "", true, true)
 		//todo
 	})
 
