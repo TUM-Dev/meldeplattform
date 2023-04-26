@@ -122,5 +122,13 @@
   "contactEmail": {
     "de": "Kontakt E-Mail (für benachrichtigungen)",
     "en": "Contact E-Mail (for notifications)"
+  },
+  "topic_saved": {
+    "de": "erfolgreich gespeichert",
+    "en": "saved successfully"
+  },
+  "topic_saved_error": {
+    "de": "speichern fehlgeschlagen",
+    "en": "saving failed"
   }
 }

@@ -12,9 +12,9 @@
 
     <p class="mb-4">{{.Tr.T .Lang "create_topic_summary"}}</p>
     <form class="mb-14"
-          @submit.prevent="fetch('/api/topic/'+topic.ID, {method:'POST', body: JSON.stringify(topic)})"
-          x-data="{ topic: undefined, id: window.location.href.substring(window.location.href.lastIndexOf('/') + 1) }"
-          x-init="fetch('/api/topic/'+(id!==undefined?id:0)).then(r=>r.json()).then((r)=>topic=r)">
+          @submit.prevent="fetch('/api/topic/'+topic.ID, {method:'POST', body: JSON.stringify(topic)}).then(r=>{saved=r.ok;error=!r.ok}).catch(e=>{error=true})"
+          x-data="{ topic: undefined, id: window.location.href.substring(window.location.href.lastIndexOf('/') + 1), saved: false, error: false }"
+          x-init="fetch('/api/topic/'+(id!==undefined?id:0)).then(r=>r.json()).then((r)=>{topic=r})">
         <template x-if="topic !== undefined">
             <div>
                 <h3 class="text-xl font-semibold">{{.Tr.T .Lang "general"}}</h3>
@@ -122,6 +122,14 @@
         <button class="button button-primary" type="submit">
             {{.Tr.T .Lang "create_topic"}}
         </button>
+
+        <template x-if="saved">
+            <span class="text-green-600">{{.Tr.T .Lang "topic_saved"}}</span>
+        </template>
+
+        <template x-if="error">
+            <span class="text-red-600">{{.Tr.T .Lang "topic_saved_error"}}</span>
+        </template>
     </form>
 </div>
 {{template "footer" .}}

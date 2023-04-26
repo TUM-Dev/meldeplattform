@@ -383,6 +383,12 @@ func (a *App) upsertTopic(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "Please provide at least one question")
 		return
 	}
+	var fieldIDs []uint
+	for _, field := range r.Fields {
+		fieldIDs = append(fieldIDs, field.ID)
+	}
+	a.db.Table("fields").Where("topic_id = ? and id not in ?", r.ID, fieldIDs).Delete("")
+	a.db.Unscoped().Table("topic_admins").Where("topic_id = ?", r.ID).Delete("")
 	var cleanAdmins []model.Admin
 	for _, admin := range r.Admins {
 		if admin.UserID != "" {
