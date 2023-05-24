@@ -26,6 +26,7 @@ type InfoPage struct {
 type Index struct {
 	Base
 	Topic *Topic
+	Token string
 }
 
 type NewTopicPage struct {

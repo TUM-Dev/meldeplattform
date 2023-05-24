@@ -7,6 +7,8 @@
     <hr class="m-4">
     <form method="post" action="/submit" enctype="multipart/form-data" class="mb-10">
         <input type="hidden" name="topic" value="{{$form.ID}}">
+        <input type="hidden" name="token" value="{{.Token}}">
+
         <div class="my-4">
             <label>
                 <span class="w-full">{{ .Tr.T $lang "emailLabel"}}</span>
