@@ -20,7 +20,7 @@
     "en": "Sourcecode"
   },
   "select_topic_prompt": {
-    "de": "Bitte wählen Sie den Typ des zu meldenenden Problems aus",
+    "de": "Bitte wählen Sie den Typ des zu meldenden Problems aus",
     "en": "Please select the type of issue you want to report"
   },
   "report": {
@@ -28,8 +28,8 @@
     "en": "Report"
   },
   "create_topic": {
-    "de": "Thema erstellen / updaten",
-    "en": "Create/Update Topic"
+    "de": "Thema erstellen / aktualisieren",
+    "en": "Create / Update topic"
   },
   "create_topic_summary": {
     "de": "Erstellen eines neuen Unterthemas für die Meldeplattform:",
@@ -104,7 +104,7 @@
     "en": "Hide Closed Reports"
   },
   "hide_spam": {
-    "de": "Spam Verstecken",
+    "de": "Spam verstecken",
     "en": "Hide Spam"
   },
   "emailLabel":{
@@ -112,15 +112,15 @@
     "en": "E-Mail (optional)"
   },
   "emailDescription": {
-    "de": "Falls sie über updates zu dieser Meldung informiert werden möchten, geben sie bitte ihre E-Mail Adresse an.",
+    "de": "Falls Sie über Updates zu dieser Meldung informiert werden möchten, geben Sie bitte Ihre E-Mail Adresse an.",
     "en": "If you want to be informed about updates to this report, please enter your E-Mail address."
   },
   "reportOpened": {
-    "de": "Ihre Meldung wurde erfolgreich abgesendet. Bitte speichern Sie sich den Link zu dieser Seite und kommen Sie gelegentlich zurück um Updates und weitere Fragen zu sehen.",
-    "en": "Your report was submitted successfully. Please save the link of this page somewhere secure and come back occasionally for updates and further questions."
+    "de": "Ihre Meldung wurde erfolgreich abgesendet. Bitte speichern Sie sich den Link zu dieser Seite und kommen Sie gelegentlich zurück um Updates oder weitere Rückfragen zu sehen.",
+    "en": "Your report was submitted successfully. Please save the link of this page somewhere secure and come back occasionally for updates or further followup questions."
   },
   "contactEmail": {
-    "de": "Kontakt E-Mail (für benachrichtigungen)",
+    "de": "Kontakt E-Mail (für Benachrichtigungen)",
     "en": "Contact E-Mail (for notifications)"
   },
   "topic_saved": {
