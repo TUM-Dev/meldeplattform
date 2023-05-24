@@ -5,7 +5,7 @@
         {{$form.Summary.Tr $lang}}
     </p>
     <hr class="m-4">
-    <form method="post" action="/submit" enctype="multipart/form-data" class="mb-10">
+    <form method="post" action="/submit" enctype="multipart/form-data">
         <input type="hidden" name="topic" value="{{$form.ID}}">
         <input type="hidden" name="token" value="{{.Token}}">
 

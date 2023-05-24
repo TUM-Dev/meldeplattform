@@ -8,7 +8,7 @@
 
 <body class="bg-gray-50">
 {{template "header" .}}
-<div class="container" x-data="{ hideClosed: true, hideSpam: true }">
+<div class="container pb-10" x-data="{ hideClosed: true, hideSpam: true }">
     <h1 class="font-semibold text-xl text-gray-700 mb-4">{{.Tr.T .Lang "reports"}}: {{.Topic.Name.Tr .Lang}}</h1>
     {{- /*gotype: github.com/TUM-Dev/meldeplattform/pkg/model.ReportsOfTopicPage*/ -}}
     <label class="text-sm font-medium">

@@ -11,7 +11,7 @@
 {{$uid := .Base.UID}}
 {{$admin := .Base.IsAdmin}}
 {{$t := .Tr}}
-<div class="container">
+<div class="container pb-10">
     <p>{{if eq .Topic nil}}{{.Tr.T $lang "select_topic_prompt"}}{{end}}</p>
         {{if ne .Topic nil}}
             {{template "form" .}}
