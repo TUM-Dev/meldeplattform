@@ -1,7 +1,9 @@
 package model
 
 import (
+	"encoding/json"
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
+	"gorm.io/gorm"
 )
 
 type Admin struct {
@@ -34,7 +36,27 @@ type Field struct {
 	Description i18n.Translatable `yaml:"description" gorm:"embedded;embeddedPrefix:description_"`
 
 	// For select inputs:
-	Choices *[]string `yaml:"choices" gorm:"-"`
+	Choices    *[]string `yaml:"choices" gorm:"-"`
+	ChoicesStr string    `gorm:"choices"`
+}
+
+func (f *Field) BeforeSave(tx *gorm.DB) error {
+	if f.Choices == nil {
+		f.Choices = &[]string{}
+	}
+	marshal, err := json.Marshal(f.Choices)
+	if err != nil {
+		return err
+	}
+	f.ChoicesStr = string(marshal)
+	return nil
+}
+
+func (f *Field) AfterFind(tx *gorm.DB) error {
+	if f.ChoicesStr == "" {
+		f.ChoicesStr = "[]"
+	}
+	return json.Unmarshal([]byte(f.ChoicesStr), &f.Choices)
 }
 
 func (t *Topic) IsAdmin(userid string) bool {

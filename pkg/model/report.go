@@ -1,6 +1,7 @@
 package model
 
 import (
+	"html"
 	"html/template"
 	"time"
 
@@ -112,8 +113,9 @@ func (r *Report) DateFmt() string {
 }
 
 func (m *Message) GetBody() template.HTML {
-	html := blackfriday.Run([]byte(m.Content), blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.HardLineBreak))
-	p := bluemonday.NewPolicy()
+	escaped := html.EscapeString(m.Content)
+	html := blackfriday.Run([]byte(escaped), blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.HardLineBreak))
+	p := bluemonday.UGCPolicy()
 	p.AllowStandardURLs()
 	p.AllowAttrs("href").OnElements("a")
 	p.AllowElements("b", "br", "strong", "p", "ul", "li")
