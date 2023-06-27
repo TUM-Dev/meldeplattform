@@ -52,6 +52,7 @@
                                 <option value="textarea">Textarea</option>
                                 <option value="file">File</option>
                                 <option value="files">Files</option>
+                                <option value="select">Select</option>
                             </select>
                         </label>
                         Name:
@@ -82,6 +83,17 @@
                             </label>
                         </label>
 
+                        <template x-if="field.Type === 'select'">
+                            <div>
+                                <template x-for="(f, i) in field.Choices">
+                                    <div>
+                                        <input type="text" x-model="field.Choices[i]">
+                                    </div>
+                                </template>
+                                <button type="button" @click="field.Choices.push('')">+</button>
+                            </div>
+                        </template>
+
                         <label>
                             <span>{{.Tr.T .Lang "required"}}</span>
                             <input type="checkbox" x-model="field.Required">
@@ -92,7 +104,7 @@
                 </template>
                 <button class="button mt-2" type="button"
                         @click="if(topic.Fields==null){topic.Fields=[]};
-                        topic.Fields.push({Description:{de:'', en:''},Name:{de:'', en:''}, Type:'text',Required:false})">
+                        topic.Fields.push({Description:{de:'', en:''},Name:{de:'', en:''}, Type:'text',Required:false, Choices: []})">
                     {{.Tr.T .Lang "add_field"}}
                     <hr class="my-4">
                 </button>
