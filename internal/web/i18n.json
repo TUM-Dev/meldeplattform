@@ -130,5 +130,9 @@
   "topic_saved_error": {
     "de": "speichern fehlgeschlagen",
     "en": "saving failed"
+  },
+  "select_options_label": {
+    "de": "Auswahlmöglichkeiten",
+    "en": "Options"
   }
 }

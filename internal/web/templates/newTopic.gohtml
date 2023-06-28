@@ -85,12 +85,13 @@
 
                         <template x-if="field.Type === 'select'">
                             <div>
+                                <span>{{.Tr.T .Lang "select_options_label"}}</span>
                                 <template x-for="(f, i) in field.Choices">
-                                    <div>
-                                        <input type="text" x-model="field.Choices[i]">
+                                    <div class="p-2">
+                                        <input class="w-full" type="text" x-model="field.Choices[i]">
                                     </div>
                                 </template>
-                                <button type="button" @click="field.Choices.push('')">+</button>
+                                <button class="button-small" type="button" @click="field.Choices.push('')">Add Option</button>
                             </div>
                         </template>
 
