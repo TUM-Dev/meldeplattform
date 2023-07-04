@@ -112,7 +112,7 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 	// The idp will redirect back to /saml/slo after the user logged out.
 	r.GET("/saml/logout", func(c *gin.Context) {
 		c.SetCookie("jwt", "", -1, "/", "", true, true)
-		//todo
+		c.Redirect(http.StatusFound, "/")
 	})
 
 	// /shib is accessed after authentication with the IDP. The post body contains the encrypted SAMLResponse.

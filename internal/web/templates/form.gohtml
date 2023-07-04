@@ -23,7 +23,7 @@
                 <label>
                     <span class="w-full">{{$field.Name.Tr $lang}}</span>
                     {{if eq $field.Type "textarea"}}
-                        <textarea class="w-full" {{if $field.Required}} required{{end}}
+                        <textarea class="w-full" rows="7" {{if $field.Required}} required{{end}}
                                   name="{{$field.ID}}"></textarea>
 
                     {{else if eq $field.Type "select"}}
