@@ -14,10 +14,11 @@ var csrfMd func(http.Handler) http.Handler
 
 func init() {
 	isDev := os.Getenv("GO_ENV") == "DEV"
+	useSecure := !isDev
 
 	csrfMd = csrf.Protect([]byte(uniuri.NewLen(32)),
 		csrf.MaxAge(0),
-		csrf.Secure(isDev),
+		csrf.Secure(useSecure),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte(`{"message": "Forbidden - CSRF token invalid"}`))
