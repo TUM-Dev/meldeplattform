@@ -3,12 +3,6 @@ package internal
 import (
 	"embed"
 	"fmt"
-	"github.com/TUM-Dev/meldeplattform/pkg/mail"
-	"github.com/TUM-Dev/meldeplattform/pkg/middleware"
-	"github.com/TUM-Dev/meldeplattform/pkg/model"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"gorm.io/gorm/clause"
 	"html/template"
 	"io"
 	"log"
@@ -17,6 +11,12 @@ import (
 	"os"
 	"path"
 	"time"
+
+	"github.com/TUM-Dev/meldeplattform/pkg/mail"
+	"github.com/TUM-Dev/meldeplattform/pkg/middleware"
+	"github.com/TUM-Dev/meldeplattform/pkg/model"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
 )
 
 //go:embed web/templates
@@ -45,6 +45,8 @@ func (a *App) initRoutes() {
 
 	a.engine.Use(middleware.InitI18n)
 	a.engine.Use(middleware.InitTemplateBase(a.i18n, a.config, a.db))
+
+	a.engine.Use(middleware.CSRF())
 
 	a.engine.GET("/", a.indexRoute)
 	a.engine.GET("/imprint", a.infoRoute("imprint"))
@@ -135,22 +137,15 @@ func (a *App) indexRoute(c *gin.Context) {
 	}
 }
 
-// xsrfTokens is a map of xsrf tokens to the time they were created
-var xsrfTokens = map[string]time.Time{}
-
 func (a *App) formRoute(c *gin.Context) {
 	base := c.MustGet("base").(model.Base)
 	t := c.Param("topicID")
 	var topic model.Topic
 	a.db.Preload(clause.Associations).Find(&topic, t)
 
-	token := uuid.New().String()
-	xsrfTokens[token] = time.Now()
-
 	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
 		Topic: &topic,
 		Base:  base,
-		Token: token,
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -163,13 +158,6 @@ func (a *App) submitRoute(c *gin.Context) {
 	if err != nil {
 		return
 	}
-
-	token := c.PostForm("token")
-	if t, ok := xsrfTokens[token]; !ok || time.Now().Before(t.Add(time.Second*30)) || time.Now().After(t.Add(time.Minute*30)) {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid token")
-		return
-	}
-	delete(xsrfTokens, token)
 
 	var topic model.Topic
 	err = a.db.Preload(clause.Associations).Find(&topic, c.PostForm("topic")).Error

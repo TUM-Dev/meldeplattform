@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
 	"html/template"
+
+	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
 )
 
 type Base struct {
@@ -26,7 +27,6 @@ type InfoPage struct {
 type Index struct {
 	Base
 	Topic *Topic
-	Token string
 }
 
 type NewTopicPage struct {
