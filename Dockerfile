@@ -1,10 +1,10 @@
-FROM node:current-alpine3.17 as web
+FROM node:current-alpine3.18 as web
 
 WORKDIR /app
 COPY internal/web .
 RUN npm install && npm run build
 
-FROM golang:1.19-alpine3.17 AS dependencies
+FROM golang:1.19-alpine3.18 AS dependencies
 
 ENV GOPATH="/go"
 
@@ -15,7 +15,7 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-FROM golang:1.19-alpine3.17 AS builder
+FROM golang:1.19-alpine3.18 AS builder
 
 ENV GOPATH="/go"
 
@@ -29,7 +29,7 @@ COPY --from=web /app/dist internal/web/dist
 
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app cmd/meldung/meldung.go
 
-FROM alpine:3.17
+FROM alpine:3.18
 
 # ca-certificates is required for making HTTPS requests to services like matrix, rocketchat, etc.
 # curl is required for healthchecks.
