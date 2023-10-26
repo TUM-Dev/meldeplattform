@@ -46,7 +46,9 @@ func (a *App) initRoutes() {
 	a.engine.Use(middleware.InitI18n)
 	a.engine.Use(middleware.InitTemplateBase(a.i18n, a.config, a.db))
 
-	a.engine.Use(middleware.CSRF())
+	if os.Getenv("CSRF") == "ENABLED" {
+		a.engine.Use(middleware.CSRF())
+	}
 
 	a.engine.GET("/", a.indexRoute)
 	a.engine.GET("/imprint", a.infoRoute("imprint"))
