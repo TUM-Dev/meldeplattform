@@ -12,11 +12,13 @@ import (
 
 var csrfMd func(http.Handler) http.Handler
 
+var csrfSecret = uniuri.NewLen(32)
+
 func init() {
 	isDev := os.Getenv("GO_ENV") == "DEV"
 	useSecure := !isDev
 
-	csrfMd = csrf.Protect([]byte(uniuri.NewLen(32)),
+	csrfMd = csrf.Protect([]byte(csrfSecret),
 		csrf.MaxAge(0),
 		csrf.Secure(useSecure),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
