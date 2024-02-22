@@ -35,7 +35,7 @@ func (m *MatrixMessenger) SendMessage(title string, message Message, reportURL s
 	if err != nil {
 		return err
 	}
-	resp, err := http.Post(
+	resp, _ := http.Post(
 		fmt.Sprintf(matrixMSGApiURL, m.config.HomeServer, m.config.RoomID, m.config.AccessToken),
 		"application/json",
 		bytes.NewBuffer(marshal),
