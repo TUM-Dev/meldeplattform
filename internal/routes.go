@@ -333,17 +333,18 @@ func (a *App) replyRoute(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't find topic")
 		return
 	}
-	a.db.Create(&model.Message{
+	message := model.Message{
 		Content:  c.PostForm("reply"),
 		ReportID: report.ID,
 		IsAdmin:  isAdmin,
-	})
+	}
+	a.db.Create(&message)
 	err := mail.SendMail(
 		a.config.Mail.User, a.config.Mail.Password,
 		a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
 		a.config.Mail.FromName, a.config.Mail.From, topic.Email,
 		fmt.Sprintf("[%s]: report #%d updated", topic.Name.En, report.ID),
-		"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+c.PostForm("reply")+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?administratorToken="+report.AdministratorToken+"\">here</a>.")
+		"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+string(message.GetBody())+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?administratorToken="+report.AdministratorToken+"\">here</a>.")
 	if err != nil {
 		log.Println(err)
 	}
@@ -354,7 +355,7 @@ func (a *App) replyRoute(c *gin.Context) {
 				a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
 				a.config.Mail.FromName, a.config.Mail.From, *report.Creator,
 				fmt.Sprintf("[%s]: report #%d updated", topic.Name.En, report.ID),
-				"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+c.PostForm("reply")+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?reporterToken="+report.ReporterToken+"\">here</a>.")
+				"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+string(message.GetBody())+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?reporterToken="+report.ReporterToken+"\">here</a>.")
 			if err != nil {
 				log.Println(err)
 			}

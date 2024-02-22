@@ -57,7 +57,7 @@ func generateKey(org, country, province, locality, streetAddress, postalCode, cn
 		return err
 	}
 	defer file.Close()
-	_, err = file.Write(caPEM.Bytes())
+	file.Write(caPEM.Bytes())
 
 	caPrivKeyPEM := new(bytes.Buffer)
 	err = pem.Encode(caPrivKeyPEM, &pem.Block{
@@ -72,6 +72,6 @@ func generateKey(org, country, province, locality, streetAddress, postalCode, cn
 		return err
 	}
 	defer keyF.Close()
-	_, err = keyF.Write(caPrivKeyPEM.Bytes())
+	keyF.Write(caPrivKeyPEM.Bytes())
 	return nil
 }
