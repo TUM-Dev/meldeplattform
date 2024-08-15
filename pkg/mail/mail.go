@@ -3,6 +3,7 @@ package mail
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/microcosm-cc/bluemonday"
 	"net"
 	"net/mail"
 	"net/smtp"
@@ -24,13 +25,15 @@ func SendMail(user, password, server, port, fromName, from, to, subject, body st
 	for k, v := range headers {
 		message += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
-	message += "\r\n" + body
+
+	// sanitize body construct message
+	p := bluemonday.UGCPolicy()
+	sanitizedBody := p.Sanitize(body)
+	message += "\r\n" + sanitizedBody
 
 	// Connect to the SMTP Server
 	servername := server + ":" + port
-
 	host, _, _ := net.SplitHostPort(servername)
-
 	auth := smtp.PlainAuth("", user, password, host)
 
 	// TLS config
