@@ -38,7 +38,6 @@ func SendMail(user, password, server, port, fromName, from, to, subject, body st
 
 	// TLS config
 	tlsconfig := &tls.Config{
-		InsecureSkipVerify: true,
 		ServerName:         host,
 	}
 
