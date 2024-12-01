@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "group:recommended",
+    "group:allNonMajor"
+  ],
+  "timezone": "Europe/Berlin",
+  "schedule": [
+    "before 5am every weekday",
+    "every weekend"
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  }
+}
