@@ -10,14 +10,6 @@ The TUM Meldeplattform runs as a containerized application using Docker Compose 
 - Website: Main application container
 - Watchtower: Automatic container updates
 
-## Server Access
-
-The platform is hosted on a TUM server and can be accessed via SSH:
-
-```bash
-ssh root@tuzeitm-meldeplattform.srv.mwn.de
-```
-
 ## Directory Structure
 
 The main application directory is located at `/root/meldeplattform/` and contains:
