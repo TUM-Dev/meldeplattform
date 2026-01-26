@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"html/template"
 )
@@ -57,7 +58,11 @@ func (c Config) GetImprint() template.HTML {
 }
 
 func (c Config) toHtml(s string) template.HTML {
-	return template.HTML(blackfriday.Run([]byte(s), blackfriday.WithExtensions(blackfriday.CommonExtensions)))
+	unsafeHTML := blackfriday.Run([]byte(s), blackfriday.WithExtensions(blackfriday.CommonExtensions))
+	// Sanitize the HTML to prevent XSS
+	p := bluemonday.UGCPolicy()
+	safeHTML := p.SanitizeBytes(unsafeHTML)
+	return template.HTML(safeHTML)
 }
 
 func (c Config) GetLogo() template.HTML {

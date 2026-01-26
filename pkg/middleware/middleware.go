@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
@@ -13,6 +14,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// SecurityHeaders adds security-related HTTP headers to responses
+func SecurityHeaders() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Prevent clickjacking
+		c.Header("X-Frame-Options", "DENY")
+		// Prevent MIME type sniffing
+		c.Header("X-Content-Type-Options", "nosniff")
+		// Enable XSS filter in browsers
+		c.Header("X-XSS-Protection", "1; mode=block")
+		// Referrer policy
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		// Permissions policy (formerly Feature-Policy)
+		c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		c.Next()
+	}
+}
 
 func InitI18n(c *gin.Context) {
 	lang := "en" // default to english
@@ -48,7 +66,10 @@ func InitI18n(c *gin.Context) {
 }
 
 func InitTemplateBase(tr i18n.I18n, config model.Config, db *gorm.DB) func(c *gin.Context) {
+	isProd := config.Mode == "prod"
 	return func(c *gin.Context) {
+		// Store production mode flag for secure cookie settings
+		c.Set("isProd", isProd)
 		lang := c.GetString("lang")
 		base := model.Base{
 			Lang:     lang,
@@ -64,7 +85,7 @@ func InitTemplateBase(tr i18n.I18n, config model.Config, db *gorm.DB) func(c *gi
 			})
 			if err != nil {
 				fmt.Println("JWT parsing error: ", err)
-				c.SetCookie("jwt", "", -1, "/", "", false, true)
+				c.SetCookie("jwt", "", -1, "/", "", isProd, true)
 				return
 			} else {
 				base.LoggedIn = true
@@ -96,9 +117,17 @@ func AuthAdminOfTopic(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		base := c.MustGet("base").(model.Base)
 		if !base.IsAdmin {
-			topicID := c.Param("topicID")
+			topicIDStr := c.Param("topicID")
+			topicID, err := strconv.ParseUint(topicIDStr, 10, 32)
+			if err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
 			var topic model.Topic
-			db.Preload(clause.Associations).First(&topic, topicID)
+			if err := db.Preload(clause.Associations).First(&topic, uint(topicID)).Error; err != nil {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
 			isAdmin := false
 			for _, admin := range topic.Admins {
 				if admin.UserID == base.UID {

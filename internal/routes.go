@@ -16,8 +16,55 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
+
+// parseUintParam safely parses a URL parameter as a uint, returning 0 if invalid
+func parseUintParam(c *gin.Context, param string) (uint, error) {
+	val := c.Param(param)
+	id, err := strconv.ParseUint(val, 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: must be a positive integer", param)
+	}
+	return uint(id), nil
+}
+
+// allowedFileExtensions contains file extensions that are allowed for upload
+var allowedFileExtensions = map[string]bool{
+	".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true,
+	".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+	".txt": true, ".csv": true, ".odt": true, ".ods": true, ".rtf": true,
+	".zip": true, ".tar": true, ".gz": true, ".7z": true,
+	".mp4": true, ".webm": true, ".mp3": true, ".wav": true,
+}
+
+// maxFileSize is the maximum allowed file size (10 MB)
+const maxFileSize = 10 << 20
+
+// sanitizeFilename removes path traversal attempts and dangerous characters from filename
+func sanitizeFilename(filename string) string {
+	// Get only the base name (removes any path components)
+	filename = filepath.Base(filename)
+	// Replace any potentially dangerous characters
+	filename = strings.ReplaceAll(filename, "..", "")
+	filename = strings.ReplaceAll(filename, "/", "")
+	filename = strings.ReplaceAll(filename, "\\", "")
+	// If filename is empty or just dots after sanitization, generate a random one
+	if filename == "" || filename == "." {
+		filename = uuid.New().String()
+	}
+	return filename
+}
+
+// isAllowedFileExtension checks if the file extension is in the allowlist
+func isAllowedFileExtension(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	return allowedFileExtensions[ext]
+}
 
 //go:embed web/templates
 var templates embed.FS
@@ -100,13 +147,23 @@ func (a *App) setStatus(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid request")
 		return
 	}
+	reportID, err := parseUintParam(c, "reportID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid report ID")
+		return
+	}
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var r model.Report
-	err = a.db.Find(&r, c.Param("reportID")).Error
+	err = a.db.First(&r, reportID).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "report not found")
 		return
 	}
-	if fmt.Sprintf("%d", r.TopicID) != c.Param("topicID") {
+	if r.TopicID != topicID {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "report not found")
 		return
 	}
@@ -137,15 +194,47 @@ func (a *App) indexRoute(c *gin.Context) {
 
 // xsrfTokens is a map of xsrf tokens to the time they were created
 var xsrfTokens = map[string]time.Time{}
+var xsrfMutex sync.RWMutex
+
+func init() {
+	// Start a goroutine to periodically clean up expired XSRF tokens
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		for range ticker.C {
+			cleanupExpiredXSRFTokens()
+		}
+	}()
+}
+
+// cleanupExpiredXSRFTokens removes tokens older than 30 minutes
+func cleanupExpiredXSRFTokens() {
+	xsrfMutex.Lock()
+	defer xsrfMutex.Unlock()
+	cutoff := time.Now().Add(-30 * time.Minute)
+	for token, created := range xsrfTokens {
+		if created.Before(cutoff) {
+			delete(xsrfTokens, token)
+		}
+	}
+}
 
 func (a *App) formRoute(c *gin.Context) {
 	base := c.MustGet("base").(model.Base)
-	t := c.Param("topicID")
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var topic model.Topic
-	a.db.Preload(clause.Associations).Find(&topic, t)
+	if err := a.db.Preload(clause.Associations).First(&topic, topicID).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 
 	token := uuid.New().String()
+	xsrfMutex.Lock()
 	xsrfTokens[token] = time.Now()
+	xsrfMutex.Unlock()
 
 	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
 		Topic: &topic,
@@ -165,14 +254,25 @@ func (a *App) submitRoute(c *gin.Context) {
 	}
 
 	token := c.PostForm("token")
-	if t, ok := xsrfTokens[token]; !ok || time.Now().Before(t.Add(time.Second*30)) || time.Now().After(t.Add(time.Minute*30)) {
+	xsrfMutex.Lock()
+	t, ok := xsrfTokens[token]
+	if ok {
+		delete(xsrfTokens, token)
+	}
+	xsrfMutex.Unlock()
+	if !ok || time.Now().Before(t.Add(time.Second*30)) || time.Now().After(t.Add(time.Minute*30)) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid token")
 		return
 	}
-	delete(xsrfTokens, token)
 
+	topicIDStr := c.PostForm("topic")
+	topicID, err := strconv.ParseUint(topicIDStr, 10, 32)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var topic model.Topic
-	err = a.db.Preload(clause.Associations).Find(&topic, c.PostForm("topic")).Error
+	err = a.db.Preload(clause.Associations).First(&topic, uint(topicID)).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "topic not found")
 		return
@@ -199,27 +299,44 @@ func (a *App) submitRoute(c *gin.Context) {
 		}
 		if ok {
 			for _, f := range multipartFile {
+				// Validate file size
+				if f.Size > maxFileSize {
+					c.AbortWithStatusJSON(http.StatusBadRequest, "file too large (max 10MB)")
+					return
+				}
+				// Sanitize filename to prevent path traversal
+				sanitizedName := sanitizeFilename(f.Filename)
+				// Validate file extension
+				if !isAllowedFileExtension(sanitizedName) {
+					c.AbortWithStatusJSON(http.StatusBadRequest, "file type not allowed")
+					return
+				}
 				open, err := f.Open()
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
-				filePath := path.Join(a.config.FileDir, fmt.Sprintf("%d-%s", time.Now().Unix(), f.Filename))
+				// Use UUID for storage filename to prevent conflicts and enumeration
+				storageFilename := fmt.Sprintf("%s%s", uuid.New().String(), strings.ToLower(filepath.Ext(sanitizedName)))
+				filePath := path.Join(a.config.FileDir, storageFilename)
 				file, err := os.Create(filePath)
 				if err != nil {
 					fmt.Println(err)
+					_ = open.Close()
 					continue
 				}
 				_, err = io.Copy(file, open)
 				if err != nil {
 					fmt.Println(err)
+					_ = file.Close()
+					_ = open.Close()
 					continue
 				}
 				_ = file.Close()
 				_ = open.Close()
 				dbFile := model.File{
 					Location: filePath,
-					Name:     f.Filename,
+					Name:     sanitizedName,
 				}
 				a.db.Create(&dbFile)
 				message += "[" + dbFile.Name + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
@@ -376,13 +493,20 @@ func (a *App) newTopicRoute(c *gin.Context) {
 }
 
 func (a *App) getTopic(c *gin.Context) {
-	topicID := c.Param("topicID")
-	if topicID == "0" {
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
+	if topicID == 0 {
 		c.JSON(http.StatusOK, model.Topic{Fields: []model.Field{}, Admins: []model.Admin{}})
 		return
 	}
 	var topic model.Topic
-	a.db.Preload(clause.Associations).Find(&topic, topicID)
+	if err := a.db.Preload(clause.Associations).First(&topic, topicID).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 	c.JSON(http.StatusOK, topic)
 }
 
@@ -422,8 +546,16 @@ func (a *App) upsertTopic(c *gin.Context) {
 }
 
 func (a *App) reportsOfTopicRoute(c *gin.Context) {
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var topic model.Topic
-	a.db.Preload(clause.Associations).Find(&topic, c.Param("topicID"))
+	if err := a.db.Preload(clause.Associations).First(&topic, topicID).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 
 	var reports []model.Report
 	a.db.Preload(clause.Associations).Where("topic_id = ?", topic.ID).Find(&reports)
