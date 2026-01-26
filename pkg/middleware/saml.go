@@ -32,6 +32,14 @@ type SamlConfig struct {
 	} `yaml:"cert"`
 }
 
+// secureCookies determines if cookies should have the Secure flag set
+var secureCookies = false
+
+// SetSecureCookies sets whether cookies should be secure (for production mode)
+func SetSecureCookies(secure bool) {
+	secureCookies = secure
+}
+
 func ConfigSaml(r *gin.Engine, c SamlConfig) {
 	err := generateKey(c.Cert.Org, c.Cert.Country, c.Cert.Province, c.Cert.Locality, c.Cert.StreetAddress, c.Cert.PostalCode, c.Cert.Cn)
 	if err != nil {
@@ -120,6 +128,7 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
+			return
 		}
 		response, err := samlSP.ServiceProvider.ParseResponse(c.Request, []string{""})
 		if err != nil {
@@ -145,7 +154,7 @@ func ConfigSaml(r *gin.Engine, c SamlConfig) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.SetCookie("jwt", signedString, 60*60*24*7, "/", "", false, true)
+		c.SetCookie("jwt", signedString, 60*60*24*7, "/", "", secureCookies, true)
 		c.Redirect(http.StatusFound, "/")
 	})
 }

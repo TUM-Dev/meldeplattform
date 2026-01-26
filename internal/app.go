@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/TUM-Dev/meldeplattform/pkg/i18n"
+	"github.com/TUM-Dev/meldeplattform/pkg/middleware"
 	"github.com/TUM-Dev/meldeplattform/pkg/model"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -32,12 +33,15 @@ func NewApp() *App {
 	}
 	a.i18n = i
 	a.engine.Use(gin.Logger(), gin.Recovery())
+	a.engine.Use(middleware.SecurityHeaders())
 	_ = a.engine.SetTrustedProxies(nil)
 
 	err = a.initCfg()
 	if err != nil {
 		panic(fmt.Errorf("init config: %v", err))
 	}
+	// Set secure cookie flag based on production mode
+	middleware.SetSecureCookies(a.config.Mode == "prod")
 	if a.config.Mode == "prod" {
 		// strip clientip from requests:
 		a.engine.Use(func(c *gin.Context) {
@@ -58,7 +62,8 @@ func (a *App) Run() error {
 
 func (a *App) setLang(c *gin.Context) {
 	reqLang := c.Request.URL.Query().Get("lang")
-	c.SetCookie("lang", reqLang, 60*60*24*365, "/", "", false, true)
+	secure := a.config.Mode == "prod"
+	c.SetCookie("lang", reqLang, 60*60*24*365, "/", "", secure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 

@@ -24,6 +24,10 @@ func (m *WebhookMessenger) SendMessage(title string, message Message, reportURL 
 	if err != nil {
 		return err
 	}
-	_, err = http.Post(m.config.Target, "application/json", bytes.NewBuffer(marshal))
-	return err
+	resp, err := http.Post(m.config.Target, "application/json", bytes.NewBuffer(marshal))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }

@@ -13,11 +13,54 @@ import (
 	"io"
 	"log"
 	"net/http"
+	gomail "net/mail"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
+
+// parseUintParam safely parses a URL parameter as a uint, returning 0 if invalid
+func parseUintParam(c *gin.Context, param string) (uint, error) {
+	val := c.Param(param)
+	id, err := strconv.ParseUint(val, 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: must be a positive integer", param)
+	}
+	return uint(id), nil
+}
+
+// allowedFileExtensions contains file extensions that are allowed for upload
+var allowedFileExtensions = map[string]bool{
+	".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true,
+	".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+	".txt": true, ".csv": true, ".odt": true, ".ods": true, ".rtf": true,
+	".zip": true, ".tar": true, ".gz": true, ".7z": true,
+	".mp4": true, ".webm": true, ".mp3": true, ".wav": true,
+}
+
+// maxFileSize is the maximum allowed file size (10 MB)
+const maxFileSize = 10 << 20
+
+// sanitizeFilename removes path traversal attempts and ensures a safe base filename
+func sanitizeFilename(filename string) string {
+	// Get only the base name (removes any path components such as "..", "/" and "\")
+	filename = filepath.Base(filename)
+	// If filename is empty or just dots after sanitization, generate a random one
+	if filename == "" || filename == "." {
+		filename = uuid.New().String()
+	}
+	return filename
+}
+
+// isAllowedFileExtension checks if the file extension is in the allowlist
+func isAllowedFileExtension(ext string) bool {
+	return allowedFileExtensions[ext]
+}
 
 //go:embed web/templates
 var templates embed.FS
@@ -26,14 +69,9 @@ var templates embed.FS
 var static embed.FS
 
 func (a *App) initRoutes() {
-	dir, err := templates.ReadDir(".")
-	fmt.Println(err)
-	for _, entry := range dir {
-		fmt.Println(entry.Name())
-	}
 	funcs := map[string]interface{}{
 		"getByIndex": func(els []model.Topic, i *int) model.Topic {
-			if i == nil {
+			if i == nil || *i < 0 || *i >= len(els) {
 				return model.Topic{}
 			}
 			return els[*i]
@@ -86,7 +124,8 @@ func (a *App) infoRoute(page string) func(c *gin.Context) {
 			Content: content,
 		})
 		if err != nil {
-			fmt.Println(err)
+			log.Println("template error:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
 }
@@ -100,13 +139,23 @@ func (a *App) setStatus(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid request")
 		return
 	}
+	reportID, err := parseUintParam(c, "reportID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid report ID")
+		return
+	}
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var r model.Report
-	err = a.db.Find(&r, c.Param("reportID")).Error
+	err = a.db.First(&r, reportID).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "report not found")
 		return
 	}
-	if fmt.Sprintf("%d", r.TopicID) != c.Param("topicID") {
+	if r.TopicID != topicID {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "report not found")
 		return
 	}
@@ -121,7 +170,10 @@ func (a *App) setStatus(c *gin.Context) {
 	default:
 		return
 	}
-	a.db.Model(&model.Report{}).Where("id = ?", r.ID).Update("state", newStatus)
+	if err := a.db.Model(&model.Report{}).Where("id = ?", r.ID).Update("state", newStatus).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to update status")
+		return
+	}
 }
 
 func (a *App) indexRoute(c *gin.Context) {
@@ -131,29 +183,62 @@ func (a *App) indexRoute(c *gin.Context) {
 			Topic: nil,
 		})
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
 // xsrfTokens is a map of xsrf tokens to the time they were created
 var xsrfTokens = map[string]time.Time{}
+var xsrfMutex sync.RWMutex
+
+func init() {
+	// Start a goroutine to periodically clean up expired XSRF tokens
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		for range ticker.C {
+			cleanupExpiredXSRFTokens()
+		}
+	}()
+}
+
+// cleanupExpiredXSRFTokens removes tokens older than 30 minutes
+func cleanupExpiredXSRFTokens() {
+	xsrfMutex.Lock()
+	defer xsrfMutex.Unlock()
+	cutoff := time.Now().Add(-30 * time.Minute)
+	for token, created := range xsrfTokens {
+		if created.Before(cutoff) {
+			delete(xsrfTokens, token)
+		}
+	}
+}
 
 func (a *App) formRoute(c *gin.Context) {
 	base := c.MustGet("base").(model.Base)
-	t := c.Param("topicID")
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var topic model.Topic
-	a.db.Preload(clause.Associations).Find(&topic, t)
+	if err := a.db.Preload(clause.Associations).First(&topic, topicID).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 
 	token := uuid.New().String()
+	xsrfMutex.Lock()
 	xsrfTokens[token] = time.Now()
+	xsrfMutex.Unlock()
 
-	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
+	if err = a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
 		Topic: &topic,
 		Base:  base,
 		Token: token,
-	})
-	if err != nil {
-		fmt.Println(err)
+	}); err != nil {
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -161,18 +246,30 @@ func (a *App) submitRoute(c *gin.Context) {
 	message := ""
 	err := c.Request.ParseMultipartForm(32 << 20)
 	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid form data")
 		return
 	}
 
 	token := c.PostForm("token")
-	if t, ok := xsrfTokens[token]; !ok || time.Now().Before(t.Add(time.Second*30)) || time.Now().After(t.Add(time.Minute*30)) {
+	xsrfMutex.Lock()
+	t, ok := xsrfTokens[token]
+	if ok {
+		delete(xsrfTokens, token)
+	}
+	xsrfMutex.Unlock()
+	if !ok || time.Now().After(t.Add(time.Minute*30)) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid token")
 		return
 	}
-	delete(xsrfTokens, token)
 
+	topicIDStr := c.PostForm("topic")
+	topicID, err := strconv.ParseUint(topicIDStr, 10, 32)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var topic model.Topic
-	err = a.db.Preload(clause.Associations).Find(&topic, c.PostForm("topic")).Error
+	err = a.db.Preload(clause.Associations).First(&topic, uint(topicID)).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "topic not found")
 		return
@@ -199,29 +296,50 @@ func (a *App) submitRoute(c *gin.Context) {
 		}
 		if ok {
 			for _, f := range multipartFile {
+				// Validate file size
+				if f.Size > maxFileSize {
+					c.AbortWithStatusJSON(http.StatusBadRequest, "file too large (max 10MB)")
+					return
+				}
+				// Sanitize filename to prevent path traversal
+				sanitizedName := sanitizeFilename(f.Filename)
+				// Extract and validate file extension
+				ext := strings.ToLower(filepath.Ext(sanitizedName))
+				if !isAllowedFileExtension(ext) {
+					c.AbortWithStatusJSON(http.StatusBadRequest, "file type not allowed")
+					return
+				}
 				open, err := f.Open()
 				if err != nil {
-					fmt.Println(err)
+					log.Println("failed to open uploaded file:", err)
 					continue
 				}
-				filePath := path.Join(a.config.FileDir, fmt.Sprintf("%d-%s", time.Now().Unix(), f.Filename))
+				// Use UUID for storage filename to prevent conflicts and enumeration
+				storageFilename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+				filePath := path.Join(a.config.FileDir, storageFilename)
 				file, err := os.Create(filePath)
 				if err != nil {
-					fmt.Println(err)
+					log.Println("failed to create file:", err)
+					_ = open.Close()
 					continue
 				}
 				_, err = io.Copy(file, open)
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
 				_ = file.Close()
 				_ = open.Close()
+				if err != nil {
+					log.Println("failed to write file:", err)
+					_ = os.Remove(filePath)
+					continue
+				}
 				dbFile := model.File{
 					Location: filePath,
-					Name:     f.Filename,
+					Name:     sanitizedName,
 				}
-				a.db.Create(&dbFile)
+				if err := a.db.Create(&dbFile).Error; err != nil {
+					log.Println("failed to save file record:", err)
+					_ = os.Remove(filePath)
+					continue
+				}
 				message += "[" + dbFile.Name + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
 			}
 		}
@@ -230,9 +348,12 @@ func (a *App) submitRoute(c *gin.Context) {
 		Content: message,
 	}
 	var email *string
-	if c.PostForm("email") != "" {
-		emailS := c.PostForm("email")
-		email = &emailS
+	if emailStr := c.PostForm("email"); emailStr != "" {
+		if _, err := gomail.ParseAddress(emailStr); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "invalid email format")
+			return
+		}
+		email = &emailStr
 	}
 	dbReport := model.Report{
 		TopicID:  topic.ID,
@@ -289,7 +410,8 @@ func (a *App) reportRoute(c *gin.Context) {
 
 	err := a.template.ExecuteTemplate(c.Writer, "report.gohtml", d)
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -303,6 +425,21 @@ func (a *App) getFile(c *gin.Context) {
 	err := a.db.Where("uuid = ?", fileID).Find(&res).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	// Validate that file location is within allowed directory (defense-in-depth)
+	absLocation, err := filepath.Abs(res.Location)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	absFileDir, err := filepath.Abs(a.config.FileDir)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if !strings.HasPrefix(absLocation, absFileDir) {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	c.FileAttachment(res.Location, res.Name)
@@ -333,11 +470,14 @@ func (a *App) replyRoute(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't find topic")
 		return
 	}
-	a.db.Create(&model.Message{
+	if err := a.db.Create(&model.Message{
 		Content:  c.PostForm("reply"),
 		ReportID: report.ID,
 		IsAdmin:  isAdmin,
-	})
+	}).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to create message")
+		return
+	}
 	err := mail.SendMail(
 		a.config.Mail.User, a.config.Mail.Password,
 		a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
@@ -349,14 +489,19 @@ func (a *App) replyRoute(c *gin.Context) {
 	}
 	if isAdmin {
 		if report.Creator != nil {
-			err := mail.SendMail(
-				a.config.Mail.User, a.config.Mail.Password,
-				a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
-				a.config.Mail.FromName, a.config.Mail.From, *report.Creator,
-				fmt.Sprintf("[%s]: report #%d updated", topic.Name.En, report.ID),
-				"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+c.PostForm("reply")+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?reporterToken="+report.ReporterToken+"\">here</a>.")
-			if err != nil {
-				log.Println(err)
+			// Validate stored email before sending (defense-in-depth)
+			if _, err := gomail.ParseAddress(*report.Creator); err != nil {
+				log.Println("invalid creator email:", err)
+			} else {
+				err := mail.SendMail(
+					a.config.Mail.User, a.config.Mail.Password,
+					a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
+					a.config.Mail.FromName, a.config.Mail.From, *report.Creator,
+					fmt.Sprintf("[%s]: report #%d updated", topic.Name.En, report.ID),
+					"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+c.PostForm("reply")+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?reporterToken="+report.ReporterToken+"\">here</a>.")
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 		c.Redirect(http.StatusFound, "/report?administratorToken="+administratorToken)
@@ -371,18 +516,26 @@ func (a *App) newTopicRoute(c *gin.Context) {
 		model.NewTopicPage{Base: c.MustGet("base").(model.Base)},
 	)
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
 func (a *App) getTopic(c *gin.Context) {
-	topicID := c.Param("topicID")
-	if topicID == "0" {
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
+	if topicID == 0 {
 		c.JSON(http.StatusOK, model.Topic{Fields: []model.Field{}, Admins: []model.Admin{}})
 		return
 	}
 	var topic model.Topic
-	a.db.Preload(clause.Associations).Find(&topic, topicID)
+	if err := a.db.Preload(clause.Associations).First(&topic, topicID).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 	c.JSON(http.StatusOK, topic)
 }
 
@@ -422,8 +575,16 @@ func (a *App) upsertTopic(c *gin.Context) {
 }
 
 func (a *App) reportsOfTopicRoute(c *gin.Context) {
+	topicID, err := parseUintParam(c, "topicID")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid topic ID")
+		return
+	}
 	var topic model.Topic
-	a.db.Preload(clause.Associations).Find(&topic, c.Param("topicID"))
+	if err := a.db.Preload(clause.Associations).First(&topic, topicID).Error; err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 
 	var reports []model.Report
 	a.db.Preload(clause.Associations).Where("topic_id = ?", topic.ID).Find(&reports)
@@ -434,6 +595,7 @@ func (a *App) reportsOfTopicRoute(c *gin.Context) {
 		Reports: reports,
 	})
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
