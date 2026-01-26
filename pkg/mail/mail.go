@@ -7,7 +7,15 @@ import (
 	"net"
 	"net/mail"
 	"net/smtp"
+	"strings"
 )
+
+// sanitizeHeader removes CRLF characters to prevent header injection attacks
+func sanitizeHeader(s string) string {
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	return s
+}
 
 func SendMail(user, password, server, port, fromName, from, to, subject, body string) error {
 	fromMail := mail.Address{Name: fromName, Address: from}
@@ -17,7 +25,7 @@ func SendMail(user, password, server, port, fromName, from, to, subject, body st
 	headers := make(map[string]string)
 	headers["From"] = fromMail.String()
 	headers["To"] = toMail.String()
-	headers["Subject"] = subject
+	headers["Subject"] = sanitizeHeader(subject)
 	headers["Content-type"] = "text/html; charset=\"UTF-8\""
 
 	// Setup message
