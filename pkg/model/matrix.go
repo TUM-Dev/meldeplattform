@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"net/http"
@@ -26,11 +27,15 @@ func NewMatrixMessenger(config MatrixConfig) *MatrixMessenger {
 const matrixMSGApiURL = "https://%s/_matrix/client/r0/rooms/%s/send/m.room.message?access_token=%s"
 
 func (m *MatrixMessenger) SendMessage(title string, message Message, reportURL string) error {
+	// HTML-escape title and URL to prevent XSS
+	escapedTitle := html.EscapeString(title)
+	escapedURL := html.EscapeString(reportURL)
 	msg := map[string]string{
 		"msgtype":        "m.text",
 		"format":         "org.matrix.custom.html",
-		"formatted_body": "<h1>" + title + "</h1>" + string(message.GetBody()) + "<br><a href=\"" + reportURL + "\">View Report</a>",
-		"body":           "# " + title + "\n\n" + message.Content + "\n\nView Report: " + reportURL}
+		"formatted_body": "<h1>" + escapedTitle + "</h1>" + string(message.GetBody()) + "<br><a href=\"" + escapedURL + "\">View Report</a>",
+		"body":           "# " + title + "\n\n" + message.Content + "\n\nView Report: " + reportURL,
+	}
 	marshal, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -40,7 +45,15 @@ func (m *MatrixMessenger) SendMessage(title string, message Message, reportURL s
 		"application/json",
 		bytes.NewBuffer(marshal),
 	)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 	r, err := io.ReadAll(resp.Body)
-	log.Println(string(r), err)
-	return err
+	if err != nil {
+		log.Println("failed to read matrix response:", err)
+		return err
+	}
+	log.Println(string(r))
+	return nil
 }

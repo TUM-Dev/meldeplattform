@@ -53,6 +53,7 @@ func SendMail(user, password, server, port, fromName, from, to, subject, body st
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
 	err = c.StartTLS(tlsconfig)
 	if err != nil {
