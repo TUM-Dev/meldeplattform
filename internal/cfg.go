@@ -11,6 +11,7 @@ func (a *App) initCfg() error {
 	if err != nil {
 		return fmt.Errorf("open config.yaml: %v", err)
 	}
+	defer f.Close()
 	d := yaml.NewDecoder(f)
 	if err = d.Decode(&a.config); err != nil {
 		return fmt.Errorf("decode config.yaml: %v", err)

@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	gomail "net/mail"
 	"net/url"
 	"os"
 	"path"
@@ -45,14 +46,10 @@ var allowedFileExtensions = map[string]bool{
 // maxFileSize is the maximum allowed file size (10 MB)
 const maxFileSize = 10 << 20
 
-// sanitizeFilename removes path traversal attempts and dangerous characters from filename
+// sanitizeFilename removes path traversal attempts and ensures a safe base filename
 func sanitizeFilename(filename string) string {
-	// Get only the base name (removes any path components)
+	// Get only the base name (removes any path components such as "..", "/" and "\")
 	filename = filepath.Base(filename)
-	// Replace any potentially dangerous characters
-	filename = strings.ReplaceAll(filename, "..", "")
-	filename = strings.ReplaceAll(filename, "/", "")
-	filename = strings.ReplaceAll(filename, "\\", "")
 	// If filename is empty or just dots after sanitization, generate a random one
 	if filename == "" || filename == "." {
 		filename = uuid.New().String()
@@ -61,8 +58,7 @@ func sanitizeFilename(filename string) string {
 }
 
 // isAllowedFileExtension checks if the file extension is in the allowlist
-func isAllowedFileExtension(filename string) bool {
-	ext := strings.ToLower(filepath.Ext(filename))
+func isAllowedFileExtension(ext string) bool {
 	return allowedFileExtensions[ext]
 }
 
@@ -73,14 +69,9 @@ var templates embed.FS
 var static embed.FS
 
 func (a *App) initRoutes() {
-	dir, err := templates.ReadDir(".")
-	fmt.Println(err)
-	for _, entry := range dir {
-		fmt.Println(entry.Name())
-	}
 	funcs := map[string]interface{}{
 		"getByIndex": func(els []model.Topic, i *int) model.Topic {
-			if i == nil {
+			if i == nil || *i < 0 || *i >= len(els) {
 				return model.Topic{}
 			}
 			return els[*i]
@@ -133,7 +124,8 @@ func (a *App) infoRoute(page string) func(c *gin.Context) {
 			Content: content,
 		})
 		if err != nil {
-			fmt.Println(err)
+			log.Println("template error:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
 }
@@ -178,7 +170,10 @@ func (a *App) setStatus(c *gin.Context) {
 	default:
 		return
 	}
-	a.db.Model(&model.Report{}).Where("id = ?", r.ID).Update("state", newStatus)
+	if err := a.db.Model(&model.Report{}).Where("id = ?", r.ID).Update("state", newStatus).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to update status")
+		return
+	}
 }
 
 func (a *App) indexRoute(c *gin.Context) {
@@ -188,7 +183,8 @@ func (a *App) indexRoute(c *gin.Context) {
 			Topic: nil,
 		})
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -236,13 +232,13 @@ func (a *App) formRoute(c *gin.Context) {
 	xsrfTokens[token] = time.Now()
 	xsrfMutex.Unlock()
 
-	err := a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
+	if err = a.template.ExecuteTemplate(c.Writer, "index.gohtml", model.Index{
 		Topic: &topic,
 		Base:  base,
 		Token: token,
-	})
-	if err != nil {
-		fmt.Println(err)
+	}); err != nil {
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -250,6 +246,7 @@ func (a *App) submitRoute(c *gin.Context) {
 	message := ""
 	err := c.Request.ParseMultipartForm(32 << 20)
 	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid form data")
 		return
 	}
 
@@ -260,7 +257,7 @@ func (a *App) submitRoute(c *gin.Context) {
 		delete(xsrfTokens, token)
 	}
 	xsrfMutex.Unlock()
-	if !ok || time.Now().Before(t.Add(time.Second*30)) || time.Now().After(t.Add(time.Minute*30)) {
+	if !ok || time.Now().After(t.Add(time.Minute*30)) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "invalid token")
 		return
 	}
@@ -306,39 +303,43 @@ func (a *App) submitRoute(c *gin.Context) {
 				}
 				// Sanitize filename to prevent path traversal
 				sanitizedName := sanitizeFilename(f.Filename)
-				// Validate file extension
-				if !isAllowedFileExtension(sanitizedName) {
+				// Extract and validate file extension
+				ext := strings.ToLower(filepath.Ext(sanitizedName))
+				if !isAllowedFileExtension(ext) {
 					c.AbortWithStatusJSON(http.StatusBadRequest, "file type not allowed")
 					return
 				}
 				open, err := f.Open()
 				if err != nil {
-					fmt.Println(err)
+					log.Println("failed to open uploaded file:", err)
 					continue
 				}
 				// Use UUID for storage filename to prevent conflicts and enumeration
-				storageFilename := fmt.Sprintf("%s%s", uuid.New().String(), strings.ToLower(filepath.Ext(sanitizedName)))
+				storageFilename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 				filePath := path.Join(a.config.FileDir, storageFilename)
 				file, err := os.Create(filePath)
 				if err != nil {
-					fmt.Println(err)
+					log.Println("failed to create file:", err)
 					_ = open.Close()
 					continue
 				}
 				_, err = io.Copy(file, open)
-				if err != nil {
-					fmt.Println(err)
-					_ = file.Close()
-					_ = open.Close()
-					continue
-				}
 				_ = file.Close()
 				_ = open.Close()
+				if err != nil {
+					log.Println("failed to write file:", err)
+					_ = os.Remove(filePath)
+					continue
+				}
 				dbFile := model.File{
 					Location: filePath,
 					Name:     sanitizedName,
 				}
-				a.db.Create(&dbFile)
+				if err := a.db.Create(&dbFile).Error; err != nil {
+					log.Println("failed to save file record:", err)
+					_ = os.Remove(filePath)
+					continue
+				}
 				message += "[" + dbFile.Name + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
 			}
 		}
@@ -347,9 +348,12 @@ func (a *App) submitRoute(c *gin.Context) {
 		Content: message,
 	}
 	var email *string
-	if c.PostForm("email") != "" {
-		emailS := c.PostForm("email")
-		email = &emailS
+	if emailStr := c.PostForm("email"); emailStr != "" {
+		if _, err := gomail.ParseAddress(emailStr); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "invalid email format")
+			return
+		}
+		email = &emailStr
 	}
 	dbReport := model.Report{
 		TopicID:  topic.ID,
@@ -406,7 +410,8 @@ func (a *App) reportRoute(c *gin.Context) {
 
 	err := a.template.ExecuteTemplate(c.Writer, "report.gohtml", d)
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -420,6 +425,21 @@ func (a *App) getFile(c *gin.Context) {
 	err := a.db.Where("uuid = ?", fileID).Find(&res).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	// Validate that file location is within allowed directory (defense-in-depth)
+	absLocation, err := filepath.Abs(res.Location)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	absFileDir, err := filepath.Abs(a.config.FileDir)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if !strings.HasPrefix(absLocation, absFileDir) {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	c.FileAttachment(res.Location, res.Name)
@@ -450,11 +470,14 @@ func (a *App) replyRoute(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't find topic")
 		return
 	}
-	a.db.Create(&model.Message{
+	if err := a.db.Create(&model.Message{
 		Content:  c.PostForm("reply"),
 		ReportID: report.ID,
 		IsAdmin:  isAdmin,
-	})
+	}).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to create message")
+		return
+	}
 	err := mail.SendMail(
 		a.config.Mail.User, a.config.Mail.Password,
 		a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
@@ -466,14 +489,19 @@ func (a *App) replyRoute(c *gin.Context) {
 	}
 	if isAdmin {
 		if report.Creator != nil {
-			err := mail.SendMail(
-				a.config.Mail.User, a.config.Mail.Password,
-				a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
-				a.config.Mail.FromName, a.config.Mail.From, *report.Creator,
-				fmt.Sprintf("[%s]: report #%d updated", topic.Name.En, report.ID),
-				"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+c.PostForm("reply")+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?reporterToken="+report.ReporterToken+"\">here</a>.")
-			if err != nil {
-				log.Println(err)
+			// Validate stored email before sending (defense-in-depth)
+			if _, err := gomail.ParseAddress(*report.Creator); err != nil {
+				log.Println("invalid creator email:", err)
+			} else {
+				err := mail.SendMail(
+					a.config.Mail.User, a.config.Mail.Password,
+					a.config.Mail.SMTPServer, a.config.Mail.SMTPPort,
+					a.config.Mail.FromName, a.config.Mail.From, *report.Creator,
+					fmt.Sprintf("[%s]: report #%d updated", topic.Name.En, report.ID),
+					"Hi, there is a new message regarding "+topic.Name.En+":\n\n"+c.PostForm("reply")+"\n\nYou can reply to it <a href=\""+a.config.URL+"/report?reporterToken="+report.ReporterToken+"\">here</a>.")
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 		c.Redirect(http.StatusFound, "/report?administratorToken="+administratorToken)
@@ -488,7 +516,8 @@ func (a *App) newTopicRoute(c *gin.Context) {
 		model.NewTopicPage{Base: c.MustGet("base").(model.Base)},
 	)
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -566,6 +595,7 @@ func (a *App) reportsOfTopicRoute(c *gin.Context) {
 		Reports: reports,
 	})
 	if err != nil {
-		fmt.Println(err)
+		log.Println("template error:", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }

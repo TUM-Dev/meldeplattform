@@ -60,7 +60,7 @@ func InitI18n(c *gin.Context) {
 	switch lang {
 	case "de":
 		c.Header("Content-Language", "de-DE")
-	case "em":
+	case "en":
 		c.Header("Content-Language", "en-US")
 	}
 }
@@ -87,16 +87,21 @@ func InitTemplateBase(tr i18n.I18n, config model.Config, db *gorm.DB) func(c *gi
 				fmt.Println("JWT parsing error: ", err)
 				c.SetCookie("jwt", "", -1, "/", "", isProd, true)
 				return
-			} else {
-				base.LoggedIn = true
-				base.Name = token.Claims.(*TokenClaims).Name
-				base.Email = token.Claims.(*TokenClaims).Mail
-				base.UID = token.Claims.(*TokenClaims).UID
-				for _, user := range config.Content.AdminUsers {
-					if user == base.UID {
-						base.IsAdmin = true
-						break
-					}
+			}
+			claims, ok := token.Claims.(*TokenClaims)
+			if !ok {
+				fmt.Println("JWT claims error: invalid claims type")
+				c.SetCookie("jwt", "", -1, "/", "", isProd, true)
+				return
+			}
+			base.LoggedIn = true
+			base.Name = claims.Name
+			base.Email = claims.Mail
+			base.UID = claims.UID
+			for _, user := range config.Content.AdminUsers {
+				if user == base.UID {
+					base.IsAdmin = true
+					break
 				}
 			}
 		}
