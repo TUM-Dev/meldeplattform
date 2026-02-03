@@ -589,7 +589,7 @@ func (a *App) reportsOfTopicRoute(c *gin.Context) {
 	var reports []model.Report
 	a.db.Preload(clause.Associations).Where("topic_id = ?", topic.ID).Find(&reports)
 
-	err := a.template.ExecuteTemplate(c.Writer, "reportsOfTopic.gohtml", model.ReportsOfTopicPage{
+	err = a.template.ExecuteTemplate(c.Writer, "reportsOfTopic.gohtml", model.ReportsOfTopicPage{
 		Base:    c.MustGet("base").(model.Base),
 		Topic:   &topic,
 		Reports: reports,
