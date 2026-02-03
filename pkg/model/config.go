@@ -66,5 +66,5 @@ func (c Config) toHtml(s string) template.HTML {
 }
 
 func (c Config) GetLogo() template.HTML {
-	return c.toHtml(c.Content.Logo)
+	return template.HTML(c.Content.Logo)
 }
