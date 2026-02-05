@@ -551,6 +551,10 @@ func (a *App) upsertTopic(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err)
 		return
 	}
+	if c.Param("topicID") != fmt.Sprintf("%d", r.ID) {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "Topic ID doesn't match")
+		return
+	}
 	if len(r.Fields) == 0 {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "Please provide at least one question")
 		return
