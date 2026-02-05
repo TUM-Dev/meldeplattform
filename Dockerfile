@@ -38,10 +38,18 @@ FROM alpine:${ALPINEVERSION}
 # curl is required for healthchecks.
 RUN apk add --no-cache ca-certificates curl
 
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /
 
 COPY --from=builder /app /app
 COPY config /config
+
+# Create writable directories for runtime data
+RUN mkdir -p /files && chown appuser:appgroup /files
+
+USER appuser
 
 EXPOSE 8080
 HEALTHCHECK CMD curl --fail http://localhost:8080 || exit 1
