@@ -391,7 +391,7 @@ func (a *App) reportRoute(c *gin.Context) {
 		d.IsAdministrator = true
 		if err := a.db.Where("administrator_token = ?", administratorToken).
 			Preload("Messages").
-			Find(d.Report).Error; err != nil {
+			First(d.Report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -399,7 +399,7 @@ func (a *App) reportRoute(c *gin.Context) {
 		d.IsAdministrator = false
 		if err := a.db.Where("reporter_token = ?", reporterToken).
 			Preload("Messages").
-			Find(d.Report).Error; err != nil {
+			First(d.Report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -451,13 +451,13 @@ func (a *App) replyRoute(c *gin.Context) {
 	isAdmin := false
 	var report = model.Report{}
 	if reporterToken != "" {
-		if err := a.db.Where("reporter_token = ?", reporterToken).Find(&report).Error; err != nil {
+		if err := a.db.Where("reporter_token = ?", reporterToken).First(&report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 	} else if administratorToken != "" {
 		isAdmin = true
-		if err := a.db.Where("administrator_token = ?", administratorToken).Find(&report).Error; err != nil {
+		if err := a.db.Where("administrator_token = ?", administratorToken).First(&report).Error; err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -466,7 +466,7 @@ func (a *App) replyRoute(c *gin.Context) {
 		return
 	}
 	var topic model.Topic
-	if a.db.Find(&topic, report.TopicID).Error != nil {
+	if err := a.db.First(&topic, report.TopicID).Error; err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't find topic")
 		return
 	}
