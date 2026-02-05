@@ -470,8 +470,13 @@ func (a *App) replyRoute(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "can't find topic")
 		return
 	}
+	reply := c.PostForm("reply")
+	if len(reply) == 0 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "empty reply")
+		return
+	}
 	if err := a.db.Create(&model.Message{
-		Content:  c.PostForm("reply"),
+		Content:  reply,
 		ReportID: report.ID,
 		IsAdmin:  isAdmin,
 	}).Error; err != nil {
