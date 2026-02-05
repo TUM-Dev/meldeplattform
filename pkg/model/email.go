@@ -30,8 +30,10 @@ func (m *EmailMessenger) sendMail(addr, from, subject, body string, to []string)
 
 	msg := "To: " + strings.Join(to, ",") + "\r\n" +
 		"From: " + from + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		strings.ReplaceAll(body, "Content-Type: text/plain", "Content-Type: text/plain; charset=UTF-8")
+		"Subject: " + r.Replace(subject) + "\r\n" +
+		"Content-Type: text/plain; charset=UTF-8\r\n" +
+		"\r\n" +
+		body
 	c, err := smtp.Dial(addr)
 	if err != nil {
 		return err
