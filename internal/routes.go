@@ -555,9 +555,29 @@ func (a *App) upsertTopic(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "Topic ID doesn't match")
 		return
 	}
+	// Prevent ID exhaustion: for updates (ID > 0), verify the topic exists
+	if r.ID != 0 {
+		var existing model.Topic
+		if err := a.db.First(&existing, r.ID).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, "topic not found")
+			return
+		}
+	}
 	if len(r.Fields) == 0 {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "Please provide at least one question")
 		return
+	}
+	// Validate field IDs: ensure they belong to this topic or are new (ID=0)
+	for i := range r.Fields {
+		r.Fields[i].TopicID = r.ID
+		if r.Fields[i].ID != 0 {
+			var count int64
+			a.db.Model(&model.Field{}).Where("id = ? AND topic_id = ?", r.Fields[i].ID, r.ID).Count(&count)
+			if count == 0 {
+				// Field doesn't belong to this topic, treat as new
+				r.Fields[i].ID = 0
+			}
+		}
 	}
 	var fieldIDs []uint
 	for _, field := range r.Fields {
