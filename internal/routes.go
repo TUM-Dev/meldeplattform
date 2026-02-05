@@ -46,6 +46,9 @@ var allowedFileExtensions = map[string]bool{
 // maxFileSize is the maximum allowed file size (10 MB)
 const maxFileSize = 10 << 20
 
+// maxTextLength is the maximum allowed length for text input fields and replies
+const maxTextLength = 50000
+
 // sanitizeFilename removes path traversal attempts and ensures a safe base filename
 func sanitizeFilename(filename string) string {
 	// Get only the base name (removes any path components such as "..", "/" and "\")
@@ -284,6 +287,24 @@ func (a *App) submitRoute(c *gin.Context) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, "required field not provided")
 				return
 			}
+			if len(fieldResp) > maxTextLength {
+				c.AbortWithStatusJSON(http.StatusBadRequest, "input too long")
+				return
+			}
+			// Validate select field answers against predefined choices
+			if field.Type == "select" && fieldResp != "" && field.Choices != nil {
+				valid := false
+				for _, choice := range *field.Choices {
+					if choice == fieldResp {
+						valid = true
+						break
+					}
+				}
+				if !valid {
+					c.AbortWithStatusJSON(http.StatusBadRequest, "invalid selection for field")
+					return
+				}
+			}
 			message += fieldResp + "\n"
 			continue
 		}
@@ -473,6 +494,10 @@ func (a *App) replyRoute(c *gin.Context) {
 	reply := c.PostForm("reply")
 	if len(reply) == 0 {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "empty reply")
+		return
+	}
+	if len(reply) > maxTextLength {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "reply too long")
 		return
 	}
 	if err := a.db.Create(&model.Message{
