@@ -192,14 +192,44 @@ func (a *App) indexRoute(c *gin.Context) {
 var xsrfTokens = map[string]time.Time{}
 var xsrfMutex sync.RWMutex
 
+// replyRateLimiter tracks the last reply time per token to prevent flooding
+var replyRateLimiter = map[string]time.Time{}
+var replyRateMutex sync.Mutex
+
+const replyRateInterval = 10 * time.Second
+
+func isReplyRateLimited(token string) bool {
+	replyRateMutex.Lock()
+	defer replyRateMutex.Unlock()
+	if lastTime, ok := replyRateLimiter[token]; ok {
+		if time.Since(lastTime) < replyRateInterval {
+			return true
+		}
+	}
+	replyRateLimiter[token] = time.Now()
+	return false
+}
+
 func init() {
-	// Start a goroutine to periodically clean up expired XSRF tokens
+	// Start a goroutine to periodically clean up expired XSRF tokens and rate limiter entries
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			cleanupExpiredXSRFTokens()
+			cleanupReplyRateLimiter()
 		}
 	}()
+}
+
+// cleanupReplyRateLimiter removes stale rate limiter entries
+func cleanupReplyRateLimiter() {
+	replyRateMutex.Lock()
+	defer replyRateMutex.Unlock()
+	for token, lastTime := range replyRateLimiter {
+		if time.Since(lastTime) > 5*time.Minute {
+			delete(replyRateLimiter, token)
+		}
+	}
 }
 
 // cleanupExpiredXSRFTokens removes tokens older than 30 minutes
@@ -448,6 +478,12 @@ func (a *App) getFile(c *gin.Context) {
 func (a *App) replyRoute(c *gin.Context) {
 	reporterToken := c.Query("reporterToken")
 	administratorToken := c.Query("administratorToken")
+	// Rate limit replies per token
+	rateLimitKey := reporterToken + administratorToken
+	if isReplyRateLimited(rateLimitKey) {
+		c.AbortWithStatusJSON(http.StatusTooManyRequests, "please wait before submitting another reply")
+		return
+	}
 	isAdmin := false
 	var report = model.Report{}
 	if reporterToken != "" {
