@@ -46,6 +46,18 @@ var allowedFileExtensions = map[string]bool{
 // maxFileSize is the maximum allowed file size (10 MB)
 const maxFileSize = 10 << 20
 
+// escapeMarkdown escapes markdown control characters in a string to prevent injection
+func escapeMarkdown(s string) string {
+	replacer := strings.NewReplacer(
+		`\`, `\\`,
+		`[`, `\[`,
+		`]`, `\]`,
+		`(`, `\(`,
+		`)`, `\)`,
+	)
+	return replacer.Replace(s)
+}
+
 // sanitizeFilename removes path traversal attempts and ensures a safe base filename
 func sanitizeFilename(filename string) string {
 	// Get only the base name (removes any path components such as "..", "/" and "\")
@@ -340,7 +352,7 @@ func (a *App) submitRoute(c *gin.Context) {
 					_ = os.Remove(filePath)
 					continue
 				}
-				message += "[" + dbFile.Name + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
+				message += "[" + escapeMarkdown(dbFile.Name) + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
 			}
 		}
 	}
