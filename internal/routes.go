@@ -50,8 +50,8 @@ const maxFileSize = 10 << 20
 func sanitizeFilename(filename string) string {
 	// Get only the base name (removes any path components such as "..", "/" and "\")
 	filename = filepath.Base(filename)
-	// If filename is empty or just dots after sanitization, generate a random one
-	if filename == "" || filename == "." {
+	// If filename is empty, dots, or double-dots after sanitization, generate a random one
+	if filename == "" || filename == "." || filename == ".." {
 		filename = uuid.New().String()
 	}
 	return filename
@@ -312,7 +312,8 @@ func (a *App) submitRoute(c *gin.Context) {
 				open, err := f.Open()
 				if err != nil {
 					log.Println("failed to open uploaded file:", err)
-					continue
+					c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to process uploaded file")
+					return
 				}
 				// Use UUID for storage filename to prevent conflicts and enumeration
 				storageFilename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
@@ -321,7 +322,8 @@ func (a *App) submitRoute(c *gin.Context) {
 				if err != nil {
 					log.Println("failed to create file:", err)
 					_ = open.Close()
-					continue
+					c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to save uploaded file")
+					return
 				}
 				_, err = io.Copy(file, open)
 				_ = file.Close()
@@ -329,7 +331,8 @@ func (a *App) submitRoute(c *gin.Context) {
 				if err != nil {
 					log.Println("failed to write file:", err)
 					_ = os.Remove(filePath)
-					continue
+					c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to save uploaded file")
+					return
 				}
 				dbFile := model.File{
 					Location: filePath,
@@ -338,7 +341,8 @@ func (a *App) submitRoute(c *gin.Context) {
 				if err := a.db.Create(&dbFile).Error; err != nil {
 					log.Println("failed to save file record:", err)
 					_ = os.Remove(filePath)
-					continue
+					c.AbortWithStatusJSON(http.StatusInternalServerError, "failed to save uploaded file")
+					return
 				}
 				message += "[" + dbFile.Name + "](" + a.config.URL + "/file/" + url.QueryEscape(dbFile.Name) + "?id=" + dbFile.UUID + ")"
 			}
