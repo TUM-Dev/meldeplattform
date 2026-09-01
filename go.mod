@@ -2,7 +2,7 @@ module github.com/TUM-Dev/meldeplattform
 
 go 1.25.0
 
-toolchain go1.26.4
+toolchain go1.27.1
 
 require (
 	github.com/crewjam/saml v0.5.1
@@ -14,7 +14,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/russross/blackfriday/v2 v2.1.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/gorm v1.31.1
+	gorm.io/gorm v1.31.2
 )
 
 require (
